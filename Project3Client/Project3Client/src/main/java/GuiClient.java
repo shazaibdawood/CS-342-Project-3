@@ -175,37 +175,37 @@ public class GuiClient extends Application{
 		return loginScreen;
 	}
 
-	public Pane drawSignUpScreen() {
-		Text SIGN_UP_LABEL = new Text("Sign Up");
-		SIGN_UP_LABEL.setFont(new Font("Serif", 20));
-		SIGN_UP_LABEL.setTextAlignment(TextAlignment.LEFT);
-		HBox SIGN_UP_LABEL_BOX = new HBox(SIGN_UP_LABEL);
-
-		username = new TextField();
-		username.setPromptText("Username:");
-		password = new TextField();
-		password.setPromptText("Password:");
-
-		loginButton = new Button("Login");
-		loginButton.setPrefWidth(400);
-
-		signUpButton = new Button("Sign Up");
-
-		VBox loginScreenInfoBox = new VBox(10, LOGIN_LABEL_BOX, username, password, loginButton, signUpButton);
-		loginScreenInfoBox.setMaxWidth(400);
-		loginScreenInfoBox.setAlignment(Pos.CENTER);
-
-		HBox spacer = new HBox(10);
-		spacer.setMinHeight(40);
-
-		VBox loginScreenBox = new VBox(10, TITLE_SCREEN_BOX, spacer, loginScreenInfoBox);
-		loginScreenBox.setAlignment(Pos.TOP_CENTER);
-		loginScreenBox.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-
-		BorderPane loginScreen = new BorderPane(loginScreenBox);
-		loginScreen.setPadding(new Insets(10));
-		loginScreen.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
-
-		return loginScreen;
-	}
+//	public Pane drawSignUpScreen() {
+//		Text SIGN_UP_LABEL = new Text("Sign Up");
+//		SIGN_UP_LABEL.setFont(new Font("Serif", 20));
+//		SIGN_UP_LABEL.setTextAlignment(TextAlignment.LEFT);
+//		HBox SIGN_UP_LABEL_BOX = new HBox(SIGN_UP_LABEL);
+//
+//		username = new TextField();
+//		username.setPromptText("Username:");
+//		password = new TextField();
+//		password.setPromptText("Password:");
+//
+//		loginButton = new Button("Login");
+//		loginButton.setPrefWidth(400);
+//
+//		signUpButton = new Button("Sign Up");
+//
+//		VBox loginScreenInfoBox = new VBox(10, LOGIN_LABEL_BOX, username, password, loginButton, signUpButton);
+//		loginScreenInfoBox.setMaxWidth(400);
+//		loginScreenInfoBox.setAlignment(Pos.CENTER);
+//
+//		HBox spacer = new HBox(10);
+//		spacer.setMinHeight(40);
+//
+//		VBox loginScreenBox = new VBox(10, TITLE_SCREEN_BOX, spacer, loginScreenInfoBox);
+//		loginScreenBox.setAlignment(Pos.TOP_CENTER);
+//		loginScreenBox.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+//
+//		BorderPane loginScreen = new BorderPane(loginScreenBox);
+//		loginScreen.setPadding(new Insets(10));
+//		loginScreen.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+//
+//		return loginScreen;
+//	}
 }
