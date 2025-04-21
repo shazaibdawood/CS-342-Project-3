@@ -1,17 +1,23 @@
 import java.io.Serializable;
+import java.util.HashMap;
 
 public class Message implements Serializable {
     static final long serialVersionUID = 42L;
     UserInfo userInfo = new UserInfo();
 
-    String recipient;
+    String opponent;
     String message;
     int[][] board = new int[6][7];
     boolean isMove = false;
     boolean isLogin = false;
+    boolean isSignUp = false;
 
-    boolean loginCheck = false;
+    boolean loginCheck = true;
     boolean isWin  = false;
+
+    String warning;
+    HashMap<String, Boolean> allUsers = new HashMap<>();
+    HashMap<String, UserInfo> users = new HashMap<>();
 
     public Message(){
         for(int i = 0; i < 6; i++){
@@ -39,11 +45,11 @@ public class Message implements Serializable {
     public void setMove(boolean isMove){
         this.isMove = isMove;
     }
-    public String getRecipient(){
-        return recipient;
+    public String getOpponent(){
+        return opponent;
     }
-    public void setRecipient(String recipient){
-        this.recipient = recipient;
+    public void setOpponent(String recipient){
+        this.opponent = recipient;
     }
     public boolean isLogin(){
         return isLogin;
@@ -62,5 +68,11 @@ public class Message implements Serializable {
     }
     public void setLoginCheck(boolean isLoginCheck){
         this.loginCheck = isLoginCheck;
+    }
+    public boolean isSignUp(){
+        return isSignUp;
+    }
+    public void setSignUp(boolean isSignUp){
+        this.isSignUp = isSignUp;
     }
 }

@@ -42,9 +42,13 @@ public class Server{
 				UserInfo u = new UserInfo();
 				u.username = formattedData[0];
 				u.password = formattedData[1];
+				u.wins = Integer.parseInt(formattedData[2]);
+				u.losses = Integer.parseInt(formattedData[3]);
+				u.draws = Integer.parseInt(formattedData[4]);
+				u.totalGames = Integer.parseInt(formattedData[5]);
 
-				if(formattedData.length == 3 && !formattedData[2].isEmpty()){
-					String[] friends = formattedData[2].split(";");
+				if(formattedData.length == 7 && !formattedData[6].isEmpty()){
+					String[] friends = formattedData[6].split(";");
 					for(String friend : friends){
 						u.friends.add(friend);
 					}
@@ -59,11 +63,30 @@ public class Server{
 
 	}
 
+	public HashMap<String, Boolean> getAllUsers() {
+		HashMap<String, Boolean> userStatusMap = new HashMap<>();
+
+		for (String username : users.keySet()) {
+			boolean isOnline = false;
+
+			for (ClientThread client : clients) {
+				if (client.userInfo != null && username.equals(client.userInfo.username)) {
+					isOnline = true;
+					break;
+				}
+			}
+
+			userStatusMap.put(username, isOnline);
+		}
+
+		return userStatusMap;
+	}
+
 	public void saveUserData() {
 		try {
 			FileWriter myWriter = new FileWriter("userinfo.txt");
 			for(UserInfo u : users.values()) {
-				myWriter.write(u.username + "," + u.password + "," + String.join(";", u.friends) + "\n");
+				myWriter.write(u.username + "," + u.password + "," + u.wins + "," + u.losses + "," + u.draws + "," + u.totalGames + "," + String.join(";", u.friends) + "\n");
 			}
 			myWriter.close();
 		} catch (IOException e) {
@@ -73,14 +96,36 @@ public class Server{
 	}
 
 	public boolean checkLogin(Message message) {
-		System.out.println(message.userInfo.username + "," + message.userInfo.password);
-		for(String user : users.keySet()){
-			System.out.println(user);
-		}
 		if(users.containsKey(message.userInfo.username)){
-			return (users.get(message.userInfo.username).password.equals(message.userInfo.password));
+			boolean check = (users.get(message.userInfo.username).password.equals(message.userInfo.password));
+			if(!check){
+				message.warning = "invalid password";
+			}
+			return check;
 		}
+		message.warning = "user not found";
 		return false;
+	}
+	public boolean checkSignUp(Message message) {
+		if(!users.containsKey(message.userInfo.username)){
+			if(message.userInfo.username.isEmpty() || message.userInfo.password.isEmpty()){
+				message.warning = "field cannot be empty";
+				return false;
+			} else if (!isAlNum(message.userInfo.username)) {
+				message.warning = "username must be alphanumeric";
+				return false;
+			}
+			else {
+				users.put(message.userInfo.username, message.userInfo);
+				return true;
+			}
+		}
+		message.warning = "username is taken";
+		return false;
+	}
+
+	private boolean isAlNum(String s){
+		return s.matches("[a-zA-Z0-9]+");
 	}
 
 	public class TheServer extends Thread{
@@ -108,6 +153,7 @@ public class Server{
 			int count;
 			ObjectInputStream in;
 			ObjectOutputStream out;
+			UserInfo userInfo = new UserInfo();
 			
 			ClientThread(Socket s, int count){
 				this.connection = s;
@@ -136,10 +182,15 @@ public class Server{
 
 				if(message.isLogin()){
 					message.setLoginCheck(checkLogin(message));
-					System.out.println(message.isLoginCheck());
+					if (message.isLoginCheck()) {
+						client.userInfo = users.get(message.userInfo.username);
+						message.userInfo = users.get(message.userInfo.username);
+					}
+				} else if (message.isSignUp()) {
+					message.setLoginCheck(checkSignUp(message));
 				}
-
-
+				message.allUsers = getAllUsers();
+				message.users = users;
 				try {
 						client.out.writeObject(message);
 					}
