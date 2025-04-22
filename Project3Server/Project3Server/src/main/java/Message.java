@@ -18,6 +18,7 @@ public class Message implements Serializable {
     String warning;
     HashMap<String, Boolean> allUsers = new HashMap<>();
     HashMap<String, UserInfo> users = new HashMap<>();
+    String type;
 
     public Message(){
         for(int i = 0; i < 6; i++){
@@ -74,5 +75,11 @@ public class Message implements Serializable {
     }
     public void setSignUp(boolean isSignUp){
         this.isSignUp = isSignUp;
+    }
+    public String getType(){
+        return type;
+    }
+    public void setType(String type){
+        this.type = type;
     }
 }

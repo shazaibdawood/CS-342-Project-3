@@ -105,6 +105,7 @@ public class GuiClient extends Application{
 			user.setMove(false);
 			user.setSignUp(false);
 			user.setLoginCheck(true);
+			user.setType("Login");
 			user.userInfo.username = username.getText();
 			user.userInfo.password = password.getText();
 
@@ -138,6 +139,7 @@ public class GuiClient extends Application{
 			user.setMove(false);
 			user.setSignUp(true);
 			user.setLoginCheck(true);
+			user.setType("Sign Up");
 			user.userInfo.username = username.getText();
 			user.userInfo.password = password.getText();
 
@@ -155,6 +157,9 @@ public class GuiClient extends Application{
 		});
 
 		logoutButton.setOnAction(e->{
+			user.setType("Logout");
+			clientConnection.send(user);
+
 			user = new Message();
 			masterPane.setCenter(drawLoginScreen());
 		});
@@ -173,6 +178,7 @@ public class GuiClient extends Application{
 			user.setSignUp(false);
 			user.setLoginCheck(true);
 
+			user.setType("Friends");
 			user = clientConnection.sendAndWait(user);
 
 			masterPane.setCenter(drawFriendsScreen());
@@ -184,6 +190,7 @@ public class GuiClient extends Application{
 			user.setSignUp(false);
 			user.setLoginCheck(true);
 
+			user.setType("High Scores");
 			user = clientConnection.sendAndWait(user);
 
 			masterPane.setCenter(drawHighScoreScreen());

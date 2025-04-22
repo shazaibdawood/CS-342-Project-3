@@ -180,13 +180,13 @@ public class Server{
 //					catch(Exception e) {}
 //				}
 
-				if(message.isLogin()){
+				if(message.getType().equals("Login")){
 					message.setLoginCheck(checkLogin(message));
 					if (message.isLoginCheck()) {
 						client.userInfo = users.get(message.userInfo.username);
 						message.userInfo = users.get(message.userInfo.username);
 					}
-				} else if (message.isSignUp()) {
+				} else if (message.getType().equals("SignUp")) {
 					message.setLoginCheck(checkSignUp(message));
 				}
 				message.allUsers = getAllUsers();
@@ -220,6 +220,7 @@ public class Server{
 					    try {
 							Message data = (Message) in.readObject();
 							updateClients(data, this);
+							String STATUS = data.;
 							callback.accept("client: " + count + " sent: " + data);
 //							updateClients("client #"+count+" said: " + data);
 					    	}
