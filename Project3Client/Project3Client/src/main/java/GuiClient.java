@@ -101,13 +101,10 @@ public class GuiClient extends Application{
 		});
 
 		loginButton.setOnAction(e->{
-			user.setLogin(true);
-			user.setMove(false);
-			user.setSignUp(false);
 			user.setLoginCheck(true);
 			user.userInfo.username = username.getText();
 			user.userInfo.password = password.getText();
-
+			user.setType("Login");
 			user = clientConnection.sendAndWait(user);
 
 			username.clear();
@@ -122,9 +119,7 @@ public class GuiClient extends Application{
 		});
 
 		signUpButton.setOnAction(e->{
-			user.setLogin(true);
-			user.setMove(false);
-			user.setSignUp(false);
+
 			user.setLoginCheck(true);
 
 			username.clear();
@@ -134,10 +129,8 @@ public class GuiClient extends Application{
 		});
 
 		createAccountButton.setOnAction(e->{
-			user.setLogin(false);
-			user.setMove(false);
-			user.setSignUp(true);
 			user.setLoginCheck(true);
+			user.setType("Sign Up");
 			user.userInfo.username = username.getText();
 			user.userInfo.password = password.getText();
 
@@ -155,34 +148,28 @@ public class GuiClient extends Application{
 		});
 
 		logoutButton.setOnAction(e->{
+			user.setType("Logout");
+			clientConnection.send(user);
 			user = new Message();
 			masterPane.setCenter(drawLoginScreen());
 		});
 
 		backButton.setOnAction(e->{
-			user.setLogin(false);
-			user.setMove(false);
-			user.setSignUp(false);
 			user.setLoginCheck(true);
 			masterPane.setCenter(drawWelcomeScreen());
 		});
 
 		friendsButton.setOnAction(e->{
-			user.setLogin(false);
-			user.setMove(false);
-			user.setSignUp(false);
 			user.setLoginCheck(true);
-
+			user.setType("Friends");
 			user = clientConnection.sendAndWait(user);
 
 			masterPane.setCenter(drawFriendsScreen());
 		});
 
 		highScoreButton.setOnAction(e->{
-			user.setLogin(false);
-			user.setMove(false);
-			user.setSignUp(false);
 			user.setLoginCheck(true);
+			user.setType("High Scores");
 
 			user = clientConnection.sendAndWait(user);
 

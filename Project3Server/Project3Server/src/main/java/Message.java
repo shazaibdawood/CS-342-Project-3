@@ -14,6 +14,7 @@ public class Message implements Serializable {
 
     boolean loginCheck = true;
     boolean isWin  = false;
+    String type = "";
 
     String warning;
     HashMap<String, Boolean> allUsers = new HashMap<>();
@@ -74,5 +75,11 @@ public class Message implements Serializable {
     }
     public void setSignUp(boolean isSignUp){
         this.isSignUp = isSignUp;
+    }
+    public String getType(){
+        return type;
+    }
+    public void setType(String type){
+        this.type = type;
     }
 }

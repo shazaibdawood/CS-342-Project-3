@@ -180,13 +180,13 @@ public class Server{
 //					catch(Exception e) {}
 //				}
 
-				if(message.isLogin()){
+				if(message.getType().equals("Login")){
 					message.setLoginCheck(checkLogin(message));
 					if (message.isLoginCheck()) {
 						client.userInfo = users.get(message.userInfo.username);
 						message.userInfo = users.get(message.userInfo.username);
 					}
-				} else if (message.isSignUp()) {
+				} else if (message.getType().equals("Sign Up")) {
 					message.setLoginCheck(checkSignUp(message));
 				}
 				message.allUsers = getAllUsers();
