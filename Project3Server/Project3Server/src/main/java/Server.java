@@ -220,7 +220,62 @@ public class Server{
 					    try {
 							Message data = (Message) in.readObject();
 							updateClients(data, this);
-							callback.accept("client: " + count + " sent: " + data);
+							String STATUS = data.getType();
+							switch (STATUS) {
+								case "Login":
+									if(data.isLoginCheck()) {
+										callback.accept("client: " + count + " logged in as: " + data.userInfo.username);
+									}
+									else {
+										callback.accept("client: " + count + " logged in unsuccessfully");
+									}
+									break;
+
+								case "Sign Up":
+									if(data.isLoginCheck()) {
+										callback.accept("client: " + count + " created account: " + data.userInfo.username);
+									}
+									else {
+										callback.accept("client: " + count + " created an account unsuccessfully");
+									}
+									break;
+
+								case "Logout":
+									callback.accept(data.userInfo.username + " logged out from server");
+
+									break;
+
+								case "Friends":
+									callback.accept(data.userInfo.username + " has requested friend details");
+									break;
+
+								case "High Scores":
+									callback.accept(data.userInfo.username + " requested high score details");
+									break;
+
+								case "Win":
+									callback.accept(data.userInfo.username + " won the game");
+
+									break;
+
+								case "Lose":
+									callback.accept(data.userInfo.username + " lost the game");
+									break;
+
+								case "Chat":
+									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+
+									break;
+
+								case "Move":
+									callback.accept(data.userInfo.username + " moved");
+
+									break;
+
+								default:
+									callback.accept("client: " + count + " connected to server ");
+									break;
+							}
 //							updateClients("client #"+count+" said: " + data);
 					    	}
 					    catch(Exception e) {
