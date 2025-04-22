@@ -221,6 +221,23 @@ public class Server{
 							Message data = (Message) in.readObject();
 							updateClients(data, this);
 							String STATUS = data.;
+							switch (command) {
+								case "login":
+									System.out.println("User is trying to log in.");
+									break;
+
+								case "signup":
+									System.out.println("User is creating a new account.");
+									break;
+
+								case "logout":
+									System.out.println("User has logged out.");
+									break;
+
+								default:
+									System.out.println("Unknown command.");
+									break;
+							}
 							callback.accept("client: " + count + " sent: " + data);
 //							updateClients("client #"+count+" said: " + data);
 					    	}
