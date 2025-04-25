@@ -61,17 +61,22 @@ public class GuiClient extends Application{
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		clientConnection = new Client(data->{
-			Platform.runLater(()->{chatLogs.getItems().add(data.toString());
-				System.out.println(data.toString());
-
-				Message test = (Message)data;
-				System.out.println(test.getType());
+//			Platform.runLater(()->{
+//				chatLogs.getItems().add(data.toString());
+//				System.out.println(data.toString());
 //
+//				Message test = (Message)data;
 //				System.out.println(test.getType());
+////
+////				System.out.println(test.getType());
+		// });
+			Platform.runLater(()->{
+				user=data;
+				System.out.println(user.userInfo.username);
+			});
 
 
 			});
-		});
 
 		clientConnection.start();
 

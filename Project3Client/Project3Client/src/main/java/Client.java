@@ -17,9 +17,9 @@ public class Client extends Thread{
 	ObjectOutputStream out;
 	ObjectInputStream in;
 
-	private Consumer<Serializable> callback;
+	private Consumer<Message> callback;
 
-	Client(Consumer<Serializable> call){
+	Client(Consumer<Message> call){
 		callback = call;
 	}
 
@@ -44,10 +44,10 @@ public class Client extends Thread{
 				String STATUS = message.getType();
 				switch(STATUS) {
 					case "Send Chat":
-						callback.accept(message.userInfo.username + ": " + message.toString());
+						//callback.accept(message.userInfo.username + ": " + message.toString());
 						break;
 					case "Receive Chat":
-						callback.accept(message.opponent + ": " + message.toString());
+						//callback.accept(message.opponent + ": " + message.toString());
 						break;
 				}
 				System.out.println("Received " + STATUS + ": " + message.userInfo.username + " " + message.toString() + " " + message.getOpponent());
