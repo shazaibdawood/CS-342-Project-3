@@ -8,9 +8,6 @@ public class Message implements Serializable {
     String opponent;
     String message;
     int[][] board = new int[6][7];
-    boolean isMove = false;
-    boolean isLogin = false;
-    boolean isSignUp = false;
 
     boolean loginCheck = true;
     boolean isWin  = false;
@@ -40,24 +37,14 @@ public class Message implements Serializable {
     public void setBoard(int[][] board){
         this.board = board;
     }
-    public boolean isMove(){
-        return isMove;
-    }
-    public void setMove(boolean isMove){
-        this.isMove = isMove;
-    }
+
     public String getOpponent(){
         return opponent;
     }
     public void setOpponent(String recipient){
         this.opponent = recipient;
     }
-    public boolean isLogin(){
-        return isLogin;
-    }
-    public void setLogin(boolean isLogin){
-        this.isLogin = isLogin;
-    }
+
     public boolean isWin(){
         return isWin;
     }
@@ -70,12 +57,7 @@ public class Message implements Serializable {
     public void setLoginCheck(boolean isLoginCheck){
         this.loginCheck = isLoginCheck;
     }
-    public boolean isSignUp(){
-        return isSignUp;
-    }
-    public void setSignUp(boolean isSignUp){
-        this.isSignUp = isSignUp;
-    }
+
     public String getType(){
         return type;
     }

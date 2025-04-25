@@ -10,6 +10,7 @@ matt_thegamer,qwerty,10,0,0,10,
 mason_777,secureme,4,5,1,10,noah_w;lucas_99;dani123
 shizzy2perfect,password,12,3,6,21,emily_rose;zoey_m;charlie_b;lucas_99;karen23;devon_x
 sunnydayz,sunshine,9,1,0,10,karen23
+gigglesbob,gigglesbob,0,0,0,0,
 devon_x,ilovecats,7,2,1,10,matt_thegamer
 sophie_l,password,1,9,0,10,
 tim,cheese,0,0,0,0,

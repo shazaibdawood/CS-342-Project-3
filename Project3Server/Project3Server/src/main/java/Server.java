@@ -5,12 +5,10 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Key;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Consumer;
 import java.io.FileWriter;
 import java.io.File;
-import java.util.Scanner;
 
 
 import javafx.application.Platform;
@@ -20,12 +18,13 @@ import javafx.scene.control.ListView;
 
 public class Server{
 
-	int count = 1;	
+	int count = 1;
 	ArrayList<ClientThread> clients = new ArrayList<ClientThread>();
 	TheServer server;
 	private Consumer<Serializable> callback;
 
 	HashMap<String, UserInfo> users = new HashMap<>();
+	Queue<ClientThread> randomMatchMaking = new LinkedList<>();
 
 	Server(Consumer<Serializable> call){
 		callback = call;
@@ -124,12 +123,73 @@ public class Server{
 		return false;
 	}
 
+	public boolean pair2ClientsRandomly() throws IOException {
+		if(randomMatchMaking.size() >= 2){
+			ClientThread p1 = randomMatchMaking.remove();
+			ClientThread p2 = randomMatchMaking.remove();
+			p1.clientMessage.setOpponent(p2.userInfo.username);
+			p1.clientMessage.setType("Paired");
+			p2.clientMessage.setOpponent(p1.userInfo.username);
+			p2.clientMessage.setType("Paired");
+
+			for(ClientThread client : clients){
+				if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+					client.out.writeObject(p1.clientMessage);
+				}
+				if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+					client.out.writeObject(p1.clientMessage);
+				}
+
+            }
+
+
+
+//			try {
+//				p1.out.writeObject(p1.clientMessage);
+//				p2.out.writeObject(p2.clientMessage);
+//				System.out.println("Pairing clients:");
+//				System.out.println(" -> " + p1.clientMessage.userInfo.username + " is paired with " + p2.clientMessage.userInfo.username + p1.clientMessage.getType());
+//				System.out.println(" -> " + p2.clientMessage.userInfo.username + " is paired with " + p1.clientMessage.userInfo.username+ p2.clientMessage.getType());
+//
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+
+			return true;
+        }
+
+		return false;
+	}
+
+	public void sendChat(Message message) {
+		String chat = message.toString();
+		ClientThread opponent = findUser(message.getOpponent());
+		if(opponent != null){
+			System.out.println(message.getOpponent() + message.getType()+message.userInfo.username);
+			opponent.clientMessage.setMessage(chat);
+			opponent.clientMessage.setType("Receive Chat");
+			try {
+				opponent.out.writeObject(opponent.clientMessage);
+			} catch (Exception e) {}
+		}
+	}
+
 	private boolean isAlNum(String s){
 		return s.matches("[a-zA-Z0-9]+");
 	}
 
+	private ClientThread findUser(String username){
+		for(ClientThread client : clients){
+			if(username.equals(client.userInfo.username)){
+				return client;
+			}
+		}
+		System.out.println("user not found");
+		return null;
+	}
+
 	public class TheServer extends Thread{
-		
+
 		public void run() {
 			try(ServerSocket mysocket = new ServerSocket(5555);){
 		    System.out.println("Server is waiting for a client!");
@@ -139,7 +199,7 @@ public class Server{
 				callback.accept("client has connected to server: " + "client #" + count);
 				clients.add(c);
 				c.start();
-				
+
 				count++;
 			    }
 			} catch(Exception e) {
@@ -154,13 +214,14 @@ public class Server{
 			ObjectInputStream in;
 			ObjectOutputStream out;
 			UserInfo userInfo = new UserInfo();
-			
+			Message clientMessage = new Message();
+
 			ClientThread(Socket s, int count){
 				this.connection = s;
-				this.count = count;	
+				this.count = count;
 			}
 
-			public void updateClients(Message message, ClientThread client) {
+			public void updateClients(Message message, ClientThread client) throws IOException {
 //				System.out.println(message);
 //				if(message.recipient == 0) {
 //					for (ClientThread client : clients) {
@@ -188,13 +249,23 @@ public class Server{
 					}
 				} else if (message.getType().equals("Sign Up")) {
 					message.setLoginCheck(checkSignUp(message));
+				} else if (message.getType().equals("Random Game Start")) {
+					randomMatchMaking.add(client);
+				} else if (message.getType().equals("Send Chat")) {
+					sendChat(message);
 				}
+
 				message.allUsers = getAllUsers();
 				message.users = users;
-				try {
+				if(!pair2ClientsRandomly() || !message.getType().equals("Send Chat")) {
+					client.clientMessage = message;
+					try {
+						System.out.println(client.clientMessage.toString());
 						client.out.writeObject(message);
 					}
 					catch(Exception e) {}
+				}
+
 			}
 
 //			public void send(Message message){
@@ -208,35 +279,38 @@ public class Server{
 				try {
 					in = new ObjectInputStream(connection.getInputStream());
 					out = new ObjectOutputStream(connection.getOutputStream());
-					connection.setTcpNoDelay(true);	
+					connection.setTcpNoDelay(true);
 				}
 				catch(Exception e) {
 					System.err.println("Streams not open");
 				}
 
 //				updateClients("new client on server: client #"+count);
-					
+
 				 while(true) {
 					    try {
 							Message data = (Message) in.readObject();
 							updateClients(data, this);
+
+
 							String STATUS = data.getType();
+							System.out.println(STATUS);
 							switch (STATUS) {
 								case "Login":
 									if(data.isLoginCheck()) {
-										callback.accept("client: " + count + " logged in as: " + data.userInfo.username);
+										callback.accept("client #" + count + " logged in as: " + data.userInfo.username);
 									}
 									else {
-										callback.accept("client: " + count + " logged in unsuccessfully");
+										callback.accept("client #" + count + " failed to login");
 									}
 									break;
 
 								case "Sign Up":
 									if(data.isLoginCheck()) {
-										callback.accept("client: " + count + " created account: " + data.userInfo.username);
+										callback.accept("client #" + count + " created account: " + data.userInfo.username);
 									}
 									else {
-										callback.accept("client: " + count + " created an account unsuccessfully");
+										callback.accept("client #" + count + " failed to create an account");
 									}
 									break;
 
@@ -262,13 +336,31 @@ public class Server{
 									callback.accept(data.userInfo.username + " lost the game");
 									break;
 
-								case "Chat":
+								case "Send Chat":
 									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
 
+									break;
+								case "Receive Chat":
+//									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
 									break;
 
 								case "Move":
 									callback.accept(data.userInfo.username + " moved");
+
+									break;
+
+								case "Random Game Start":
+									callback.accept(data.userInfo.username + " is waiting for an opponent");
+
+									break;
+
+								case "Paired":
+									callback.accept(data.userInfo.username + " is paired with " + data.getOpponent());
+
+									break;
+
+								case "Server Game Start":
+									callback.accept(data.userInfo.username + " started a game with the server");
 
 									break;
 
@@ -287,13 +379,13 @@ public class Server{
 					    }
 				 }
 			}//end of run
-			
-			
+
+
 		}//end of client thread
 }
 
 
-	
-	
 
-	
+
+
+

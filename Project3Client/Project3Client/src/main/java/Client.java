@@ -13,7 +13,7 @@ public class Client extends Thread{
 	private Message responseMessage = new Message();
 
 	Socket socketClient;
-	
+
 	ObjectOutputStream out;
 	ObjectInputStream in;
 
@@ -27,11 +27,11 @@ public class Client extends Thread{
 		try {
 			socketClient= new Socket("127.0.0.1",5555);
 	    	out = new ObjectOutputStream(socketClient.getOutputStream());
-	    	in = new ObjectInputStream(socketClient.getInputStream());
+	    	in = new ObjectInputStream (socketClient.getInputStream());
 	   	 	socketClient.setTcpNoDelay(true);
 		}
 		catch(Exception e) {}
-		
+
 		while(true) {
 			try {
 				Message message = (Message) in.readObject();
@@ -41,12 +41,23 @@ public class Client extends Thread{
 					lockingObject.notify();
 				}
 
-				callback.accept(message);
+				String STATUS = message.getType();
+				switch(STATUS) {
+					case "Send Chat":
+						callback.accept(message.userInfo.username + ": " + message.toString());
+						break;
+					case "Receive Chat":
+						callback.accept(message.opponent + ": " + message.toString());
+						break;
+				}
+				System.out.println("Received " + STATUS + ": " + message.userInfo.username + " " + message.toString() + " " + message.getOpponent());
 			}
-			catch(Exception e) {}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
     }
-	
+
 	public void send(Message data) {
 		try {
 			out.writeObject(data);
@@ -56,6 +67,8 @@ public class Client extends Thread{
 	}
 
 	public Message sendAndWait(Message data) {
+		System.out.println("Sent " + data.getType() + ": " + data.userInfo.username + " "  + data.toString() + " " + data.getOpponent());
+
 		try {
 			synchronized(lockingObject) {
 				out.writeObject(data);

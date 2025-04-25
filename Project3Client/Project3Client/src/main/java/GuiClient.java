@@ -12,6 +12,7 @@ import javafx.scene.control.TextField;
 
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
@@ -28,6 +29,8 @@ public class GuiClient extends Application{
 
 	TextField username = new TextField();
 	TextField password = new TextField();
+	TextField message = new TextField();
+
 	Button loginButton = new Button("Login");
 	Button signUpButton = new Button("Sign Up");
 	Button createAccountButton = new Button("Create Account");
@@ -37,15 +40,12 @@ public class GuiClient extends Application{
 	Button logoutButton = new Button("Logout");
 	Button friendsButton = new Button("Friends");
 	Button backButton = new Button("Back");
+	Button sendButton = new Button("Send");
 
-	TextField c1;
-	Button b1;
-	HashMap<String, Pane> sceneMap;
-	VBox clientBox;
 	Client clientConnection;
 
-	ListView<String> listItems2;
-	
+	ListView<String> chatLogs = new ListView<String>();
+
 	public static void main(String[] args) {
 //		Client clientThread = new Client();
 //		clientThread.start();
@@ -56,41 +56,29 @@ public class GuiClient extends Application{
 //		}
 
 		launch(args);
-
-
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		clientConnection = new Client(data->{
-			Platform.runLater(()->{listItems2.getItems().add(data.toString());
+			Platform.runLater(()->{chatLogs.getItems().add(data.toString());
+				System.out.println(data.toString());
+
+				Message test = (Message)data;
+				System.out.println(test.getType());
+//
+//				System.out.println(test.getType());
+
+
 			});
 		});
 
 		clientConnection.start();
 
-		listItems2 = new ListView<String>();
-
 		BorderPane masterPane = new BorderPane();
 		masterPane.setCenter(drawLoginScreen());
 //		masterPane.setCenter(drawWelcomeScreen());
 //		masterPane.setCenter(drawSignUpScreen());
-
-
-
-
-		c1 = new TextField();
-		b1 = new Button("Send");
-		b1.setOnAction(e->{
-			user.setMessage(c1.getText());
-			user.setMove(false);
-			clientConnection.send(user);
-			c1.clear();
-		});
-
-		sceneMap = new HashMap<String, Pane>();
-
-		sceneMap.put("client", createClientGui());
 
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			@Override
@@ -111,6 +99,7 @@ public class GuiClient extends Application{
 			password.clear();
 
 			if(user.isLoginCheck()){
+				primaryStage.setTitle(user.userInfo.username);
 				masterPane.setCenter(drawWelcomeScreen());
 			}
 			else {
@@ -119,9 +108,6 @@ public class GuiClient extends Application{
 		});
 
 		signUpButton.setOnAction(e->{
-
-			user.setLoginCheck(true);
-
 			username.clear();
 			password.clear();
 
@@ -155,12 +141,10 @@ public class GuiClient extends Application{
 		});
 
 		backButton.setOnAction(e->{
-			user.setLoginCheck(true);
 			masterPane.setCenter(drawWelcomeScreen());
 		});
 
 		friendsButton.setOnAction(e->{
-			user.setLoginCheck(true);
 			user.setType("Friends");
 			user = clientConnection.sendAndWait(user);
 
@@ -168,12 +152,36 @@ public class GuiClient extends Application{
 		});
 
 		highScoreButton.setOnAction(e->{
-			user.setLoginCheck(true);
 			user.setType("High Scores");
 
 			user = clientConnection.sendAndWait(user);
 
 			masterPane.setCenter(drawHighScoreScreen());
+		});
+
+		PVPButton.setOnAction(e->{
+			user.setType("Random Game Start");
+			user.setOpponent(user.userInfo.username);
+
+			user = clientConnection.sendAndWait(user);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		PVEButton.setOnAction(e->{
+			user.setType("Server Game Start");
+			user.setOpponent("SERVER");
+
+			user =clientConnection.sendAndWait(user);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		sendButton.setOnAction(e->{
+			user.setType("Send Chat");
+			user.setMessage(message.getText());
+			user = clientConnection.sendAndWait(user);
+			message.clear();
 		});
 
 		Scene scene = new Scene(masterPane, 700, 700);
@@ -182,12 +190,6 @@ public class GuiClient extends Application{
 		primaryStage.setResizable(false);
 		primaryStage.setScene(scene);
 		primaryStage.show();
-	}
-
-	public Pane createClientGui() {
-		clientBox = new VBox(10, c1,b1,listItems2);
-		clientBox.setStyle("-fx-background-color: blue;"+"-fx-font-family: 'serif';");
-		return new Pane(clientBox);
 	}
 
 	private HBox getTITLE_SCREEN_BOX(){
@@ -561,5 +563,71 @@ public class GuiClient extends Application{
 
 		return highScoreScreen;
 	}
+
+	public Pane drawGameScreen() {
+		message.setPromptText("message:");
+		message.setMinWidth(290);
+
+		sendButton.setMinWidth(50);
+
+		chatLogs.setMinWidth(350);
+		chatLogs.setMaxHeight(400);
+
+		HBox CHAT_SEND_BOX = new HBox(10, message, sendButton);
+		VBox CHAT_BOX = new VBox(10, chatLogs, CHAT_SEND_BOX);
+		CHAT_BOX.setStyle("-fx-background-color: lightgray; -fx-padding: 10;");
+
+		VBox BOARD_BOX = new VBox(10);
+		BOARD_BOX.setAlignment(Pos.CENTER);
+
+		int[][] board = user.getBoard();
+		for(int i = 0; i < board.length; i++) {
+			HBox BOARD_ROW = new HBox(10);
+			BOARD_ROW.setAlignment(Pos.CENTER);
+			for(int j = 0; j < board[0].length; j++) {
+				int value = board[i][j];
+
+				Circle circle = new Circle(20);
+				circle.setStroke(Color.BLACK);
+
+				if(value == 0) {
+					circle.setFill(Color.LIGHTGRAY);
+				}
+				else if(value == 1) {
+					circle.setFill(Color.RED);
+				}
+				else {
+					circle.setFill(Color.YELLOW);
+				}
+
+				BOARD_ROW.getChildren().add(circle);
+			}
+			BOARD_BOX.getChildren().add(BOARD_ROW);
+		}
+
+		HBox GAME_BOX = new HBox(10, CHAT_BOX, BOARD_BOX);
+		GAME_BOX.setAlignment(Pos.CENTER);
+
+		logoutButton.setPrefWidth(100);
+		logoutButton.setPrefHeight(25);
+		backButton.setPrefWidth(100);
+		backButton.setPrefHeight(25);
+		Region spacer2 = new Region();
+		HBox.setHgrow(spacer2, Priority.ALWAYS);
+		HBox LOGOUT_BACK_BOX = new HBox(10, logoutButton, spacer2, backButton);
+		LOGOUT_BACK_BOX.setAlignment(Pos.CENTER);
+		LOGOUT_BACK_BOX.setPadding(new Insets(10, 10, 10, 10));
+
+		VBox gameScreenBox = new VBox(10, TITLE_SCREEN_BOX, GAME_BOX, LOGOUT_BACK_BOX);
+		gameScreenBox.setAlignment(Pos.TOP_CENTER);
+		gameScreenBox.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+
+		BorderPane gameScreen = new BorderPane(gameScreenBox);
+		gameScreen.setPadding(new Insets(10, 10, 10, 10));
+		gameScreen.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+
+		return gameScreenBox;
+	}
+
 
 }
