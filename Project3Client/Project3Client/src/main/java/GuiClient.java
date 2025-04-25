@@ -179,15 +179,14 @@ public class GuiClient extends Application{
 			user.setType("Server Game Start");
 			user.setOpponent("SERVER");
 
-			user =clientConnection.sendAndWait(user);
-
+clientConnection.send(user);
 			masterPane.setCenter(drawGameScreen());
 		});
 
 		sendButton.setOnAction(e->{
 			user.setType("Send Chat");
 			user.setMessage(message.getText());
-			user = clientConnection.sendAndWait(user);
+			clientConnection.send(user);
 			message.clear();
 		});
 

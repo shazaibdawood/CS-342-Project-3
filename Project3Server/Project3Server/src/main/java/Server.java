@@ -69,7 +69,7 @@ public class Server{
 			boolean isOnline = false;
 
 			for (ClientThread client : clients) {
-				if (client.userInfo != null && username.equals(client.userInfo.username)) {
+				if (client.clientMessage.userInfo != null && username.equals(client.clientMessage.userInfo.username)) {
 					isOnline = true;
 					break;
 				}
@@ -129,26 +129,26 @@ public class Server{
 			ClientThread p2 = randomMatchMaking.remove();
 			System.out.println("Before pairing clients:");
 			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
-			p1.clientMessage.setOpponent(p2.userInfo.username);
+			p1.clientMessage.setOpponent(p2.clientMessage.userInfo.username);
 			p1.clientMessage.setType("Paired");
-			p2.clientMessage.setOpponent(p1.userInfo.username);
+			p2.clientMessage.setOpponent(p1.clientMessage.userInfo.username);
 			p2.clientMessage.setType("Paired");
 			System.out.println("After pairing clients:");
 			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
 
 
 			try {
-//				p1.out.writeObject(p1.clientMessage);
-//				p2.out.writeObject(p2.clientMessage);
-				for(ClientThread client : clients){
-					if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-						client.out.writeObject(p1.clientMessage);
-					}
-					if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-						client.out.writeObject(p1.clientMessage);
-					}
-
-				}
+				p1.out.writeObject(p1.clientMessage);
+				p2.out.writeObject(p2.clientMessage);
+//				for(ClientThread client : clients){
+//					if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+//						client.out.writeObject(p1.clientMessage);
+//					}
+//					if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+//						client.out.writeObject(p1.clientMessage);
+//					}
+//
+//				}
 
 				System.out.println("Pairing clients:");
 				System.out.println(" -> " + p1.clientMessage.userInfo.username + " is paired with " + p2.clientMessage.userInfo.username + " " + p1.clientMessage.getType());
@@ -184,7 +184,7 @@ public class Server{
 
 	private ClientThread findUser(String username){
 		for(ClientThread client : clients){
-			if(username.equals(client.userInfo.username)){
+			if(username.equals(client.clientMessage.userInfo.username)){
 				return client;
 			}
 		}
@@ -218,7 +218,6 @@ public class Server{
 			int count;
 			ObjectInputStream in;
 			ObjectOutputStream out;
-			UserInfo userInfo = new UserInfo();
 			Message clientMessage = new Message();
 
 			ClientThread(Socket s, int count){
@@ -250,7 +249,7 @@ public class Server{
 					message.setIndex(count);
 					message.setLoginCheck(checkLogin(message));
 					if (message.isLoginCheck()) {
-						client.userInfo = users.get(message.userInfo.username);
+						client.clientMessage.userInfo = users.get(message.userInfo.username);
 						message.userInfo = users.get(message.userInfo.username);
 					}
 				} else if (message.getType().equals("Sign Up")) {
@@ -265,7 +264,6 @@ public class Server{
 				message.allUsers = getAllUsers();
 				message.users = users;
 				client.clientMessage = message;
-				client.userInfo = message.userInfo;
 				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
 				if(!pair2ClientsRandomly()){
 					try {
