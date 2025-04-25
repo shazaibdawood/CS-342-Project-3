@@ -27,6 +27,9 @@ public class Message implements Serializable {
     }
 
     public String toString(){
+        return "Client #" + getIndex() + " Name: " + userInfo.username + " Message: " + getMessage() + " Type: " + getType() + " Opponent: " + getOpponent();
+    }
+    public String getMessage(){
         return message;
     }
     public void setMessage(String message){

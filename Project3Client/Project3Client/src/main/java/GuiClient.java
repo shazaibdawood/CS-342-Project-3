@@ -72,7 +72,23 @@ public class GuiClient extends Application{
 		// });
 			Platform.runLater(()->{
 				user = data;
-				System.out.println("Data: " + data.getType() + ": " + data.userInfo.username + " " + data.toString() + " " + data.getOpponent());
+//				System.out.println("Data: " + data.toString());
+//				System.out.println("User: " + user.toString());
+				String STATUS = data.getType();
+				System.out.println(STATUS);
+				switch(STATUS){
+					case "Send Chat":
+						chatLogs.getItems().add(data.userInfo.username + ": " + data.getMessage());
+						break;
+					case "Receive Chat":
+						chatLogs.getItems().add(data.opponent + ": " + data.getMessage());
+						break;
+					case "Paired":
+						chatLogs.getItems().add(data.userInfo.username + " is paired with " + data.getOpponent());
+						break;
+					default:
+						break;
+				}
 			});
 
 
@@ -179,7 +195,7 @@ public class GuiClient extends Application{
 			user.setType("Server Game Start");
 			user.setOpponent("SERVER");
 
-clientConnection.send(user);
+			clientConnection.send(user);
 			masterPane.setCenter(drawGameScreen());
 		});
 

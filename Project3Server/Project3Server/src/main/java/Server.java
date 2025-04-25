@@ -123,57 +123,124 @@ public class Server{
 		return false;
 	}
 
-	public boolean pair2ClientsRandomly(){
-		if(randomMatchMaking.size() >= 2){
+	public boolean pair2ClientsRandomly() {
+		if (randomMatchMaking.size() >= 2) {
+//			ClientThread p1 = randomMatchMaking.remove();
+//			ClientThread p2 = randomMatchMaking.remove();
+//			System.out.println("Before pairing clients:");
+//			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
+//			p1.clientMessage.setOpponent(p2.clientMessage.userInfo.username);
+//			p1.clientMessage.setType("Paired");
+//			p2.clientMessage.setOpponent(p1.clientMessage.userInfo.username);
+//			p2.clientMessage.setType("Paired");
+//			System.out.println("After pairing clients:");
+//			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
+//
+//
+//			try {
+//				p1.out.writeObject(p1.clientMessage);
+//				p2.out.writeObject(p2.clientMessage);
+////				for(ClientThread client : clients){
+////					if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+////						client.out.writeObject(p1.clientMessage);
+////					}
+////					if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+////						client.out.writeObject(p1.clientMessage);
+////					}
+////
+////				}
+//
+//				System.out.println("Pairing clients:");
+//				System.out.println(p1.clientMessage.toString());
+//				System.out.println(p2.clientMessage.toString());
+//
+//				return true;
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
 			ClientThread p1 = randomMatchMaking.remove();
 			ClientThread p2 = randomMatchMaking.remove();
-			System.out.println("Before pairing clients:");
-			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
-			p1.clientMessage.setOpponent(p2.clientMessage.userInfo.username);
-			p1.clientMessage.setType("Paired");
-			p2.clientMessage.setOpponent(p1.clientMessage.userInfo.username);
-			p2.clientMessage.setType("Paired");
-			System.out.println("After pairing clients:");
-			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
+//			System.out.println("Before pairing clients:");
+//			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
 
+			Message message1 = new Message();
+			message1.userInfo = p1.clientMessage.userInfo;
+			message1.setOpponent(p2.clientMessage.userInfo.username);
+			message1.setType("Paired");
+			message1.allUsers = getAllUsers();
+			message1.users = users;
+			message1.setIndex(p1.count);
+
+			Message message2 = new Message();
+			message2.userInfo = p2.clientMessage.userInfo;
+			message2.setOpponent(p1.clientMessage.userInfo.username);
+			message2.setType("Paired");
+			message2.allUsers = getAllUsers();
+			message2.users = users;
+			message2.setIndex(p2.count);
 
 			try {
-				p1.out.writeObject(p1.clientMessage);
-				p2.out.writeObject(p2.clientMessage);
-//				for(ClientThread client : clients){
-//					if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-//						client.out.writeObject(p1.clientMessage);
-//					}
-//					if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-//						client.out.writeObject(p1.clientMessage);
-//					}
-//
-//				}
+				p1.out.writeObject(message1);
+				p2.out.writeObject(message2);
+				p1.clientMessage = message1;
+				p2.clientMessage = message2;
+				updateClientMessage(message1);
+				updateClientMessage(message2);
 
-				System.out.println("Pairing clients:");
-				System.out.println(" -> " + p1.clientMessage.userInfo.username + " is paired with " + p2.clientMessage.userInfo.username + " " + p1.clientMessage.getType());
-				System.out.println(" -> " + p2.clientMessage.userInfo.username + " is paired with " + p1.clientMessage.userInfo.username + " " + p2.clientMessage.getType());
+//				System.out.println("Pairing clients:");
+//				System.out.println(message1.toString());
+//				System.out.println(message2.toString());
 
-
+				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
-			return true;
-        }
-
+		}
 		return false;
 	}
-
+	private void updateClientMessage(Message message){
+		for(ClientThread client : clients){
+			if(client.clientMessage.userInfo.username.equals(message.userInfo.username)){
+				client.clientMessage = message;
+				return;
+			}
+		}
+	}
 	public void sendChat(Message message) {
-		String chat = message.toString();
+		String chat = message.getMessage();
 		ClientThread opponent = findUser(message.getOpponent());
+		ClientThread sender = findUser(message.userInfo.username);
 		if(opponent != null){
-			System.out.println("To: " + message.getOpponent() +"Type: " +  message.getType()+ "From: " +message.userInfo.username);
-			opponent.clientMessage.setMessage(chat);
-			opponent.clientMessage.setType("Receive Chat");
+//			System.out.println("To: " + message.getOpponent() +"Type: " +  message.getType()+ "From: " +message.userInfo.username);
+			Message message1 = new Message();
+			message1.userInfo = opponent.clientMessage.userInfo;
+			message1.setOpponent(opponent.clientMessage.getOpponent());
+			message1.setType("Receive Chat");
+			message1.allUsers = getAllUsers();
+			message1.users = users;
+			message1.setIndex(opponent.count);
+			message1.setMessage(chat);
+			message1.setBoard(opponent.clientMessage.getBoard());
+
+			Message message2 = new Message();
+			message2.userInfo = message.userInfo;
+			message2.setOpponent(message.getOpponent());
+			message2.setType("Send Chat");
+			message2.allUsers = getAllUsers();
+			message2.users = users;
+			message2.setIndex(message.getIndex());
+			message2.setMessage(chat);
 			try {
-				opponent.out.writeObject(opponent.clientMessage);
+				opponent.out.writeObject(message1);
+				opponent.clientMessage = message1;
+
+				sender.out.writeObject(message2);
+				sender.clientMessage = message2;
+
+				updateClientMessage(message1);
+				updateClientMessage(message2);
 			} catch (Exception e) {}
 		}
 	}
@@ -190,6 +257,12 @@ public class Server{
 		}
 		System.out.println("user not found");
 		return null;
+	}
+
+	private void printClients(){
+		for(ClientThread client : clients){
+			System.out.println(client.clientMessage.toString());
+		}
 	}
 
 	public class TheServer extends Thread{
@@ -264,8 +337,10 @@ public class Server{
 				message.allUsers = getAllUsers();
 				message.users = users;
 				client.clientMessage = message;
-				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
-				if(!pair2ClientsRandomly()){
+//				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
+				boolean paired = pair2ClientsRandomly();
+
+				if(!paired && !message.getType().equals("Send Chat")){
 					try {
 						client.out.writeObject(message);
 					}
@@ -298,10 +373,12 @@ public class Server{
 				 while(true) {
 					    try {
 							Message data = (Message) in.readObject();
-							updateClients(data, this);
+							callback.accept(data);
 
-							System.out.println("Count: " + count);
-							String STATUS = data.getType();
+							updateClients(data, this);
+							printClients();
+//							System.out.println("Count: " + count);
+//							String STATUS = data.getType();
 //							System.out.println(STATUS);
 //							switch (STATUS) {
 //								case "Login":
@@ -377,7 +454,7 @@ public class Server{
 //									break;
 //							}
 //							updateClients("client #"+count+" said: " + data);
-					    callback.accept(data);
+
 						}
 					    catch(Exception e) {
 							e.printStackTrace();

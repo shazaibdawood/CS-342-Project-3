@@ -76,11 +76,11 @@ public class GuiServer extends Application{
 						break;
 
 					case "Send Chat":
-						listItems.getItems().add(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+						listItems.getItems().add(data.userInfo.username + " sent: " + data.getMessage() + " to: " + data.getOpponent());
 
 						break;
 					case "Receive Chat":
-//									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+//									callback.accept(data.userInfo.username + " sent: " + data.getMessage() + " to: " + data.getOpponent());
 						break;
 
 					case "Move":

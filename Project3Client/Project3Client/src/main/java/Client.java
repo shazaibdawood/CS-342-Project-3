@@ -35,6 +35,8 @@ public class Client extends Thread{
 		while(true) {
 			try {
 				Message message = (Message) in.readObject();
+//				System.out.println("========== NEW MESSAGE RECEIVED ==========");
+				System.out.println("Received " + message.toString());
 
 				synchronized(lockingObject) {
 					responseMessage = message;
@@ -44,14 +46,14 @@ public class Client extends Thread{
 				String STATUS = message.getType();
 //				switch(STATUS) {
 //					case "Send Chat":
-//						//callback.accept(message.userInfo.username + ": " + message.toString());
+//						//callback.accept(message.userInfo.username + ": " + message.getMessage());
 //						break;
 //					case "Receive Chat":
-//						//callback.accept(message.opponent + ": " + message.toString());
+//						//callback.accept(message.opponent + ": " + message.getMessage());
 //						break;
 //				}
 				callback.accept(message);
-				System.out.println("Received " + STATUS + ": " + message.userInfo.username + " " + message.toString() + " " + message.getOpponent());
+//				System.out.println("Received " + message.toString());
 			}
 			catch(Exception e) {
 				e.printStackTrace();
@@ -60,6 +62,7 @@ public class Client extends Thread{
     }
 
 	public void send(Message data) {
+		System.out.println("Sent " + data.toString());
 		try {
 			out.writeObject(data);
 		} catch (IOException e) {
@@ -68,7 +71,7 @@ public class Client extends Thread{
 	}
 
 	public Message sendAndWait(Message data) {
-		System.out.println("Sent " + data.getType() + ": " + data.userInfo.username + " "  + data.toString() + " " + data.getOpponent());
+		System.out.println("Sent " + data.toString());
 
 		try {
 			synchronized(lockingObject) {
