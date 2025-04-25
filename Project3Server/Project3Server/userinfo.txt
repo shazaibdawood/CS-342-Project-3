@@ -1,3 +1,4 @@
+ahmed,nadeem,0,0,0,0,
 emily_rose,mysecret,8,2,0,10,jake99
 alex2020,pass123,3,6,1,10,jake99;zoey_m
 olivia_b,password123,0,0,0,0,

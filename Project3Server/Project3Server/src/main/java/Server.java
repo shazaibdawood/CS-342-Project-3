@@ -21,12 +21,12 @@ public class Server{
 	int count = 1;
 	ArrayList<ClientThread> clients = new ArrayList<ClientThread>();
 	TheServer server;
-	private Consumer<Serializable> callback;
+	private Consumer<Message> callback;
 
 	HashMap<String, UserInfo> users = new HashMap<>();
 	Queue<ClientThread> randomMatchMaking = new LinkedList<>();
 
-	Server(Consumer<Serializable> call){
+	Server(Consumer<Message> call){
 		callback = call;
 		server = new TheServer();
 		server.start();
@@ -123,37 +123,41 @@ public class Server{
 		return false;
 	}
 
-	public boolean pair2ClientsRandomly() throws IOException {
+	public boolean pair2ClientsRandomly(){
 		if(randomMatchMaking.size() >= 2){
 			ClientThread p1 = randomMatchMaking.remove();
 			ClientThread p2 = randomMatchMaking.remove();
+			System.out.println("Before pairing clients:");
+			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
 			p1.clientMessage.setOpponent(p2.userInfo.username);
 			p1.clientMessage.setType("Paired");
 			p2.clientMessage.setOpponent(p1.userInfo.username);
 			p2.clientMessage.setType("Paired");
-
-			for(ClientThread client : clients){
-				if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-					client.out.writeObject(p1.clientMessage);
-				}
-				if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
-					client.out.writeObject(p1.clientMessage);
-				}
-
-            }
+			System.out.println("After pairing clients:");
+			System.out.println("P1: " + p1.clientMessage.userInfo.username + " P2: " + p2.clientMessage.userInfo.username);
 
 
-
-//			try {
+			try {
 //				p1.out.writeObject(p1.clientMessage);
 //				p2.out.writeObject(p2.clientMessage);
-//				System.out.println("Pairing clients:");
-//				System.out.println(" -> " + p1.clientMessage.userInfo.username + " is paired with " + p2.clientMessage.userInfo.username + p1.clientMessage.getType());
-//				System.out.println(" -> " + p2.clientMessage.userInfo.username + " is paired with " + p1.clientMessage.userInfo.username+ p2.clientMessage.getType());
-//
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
+				for(ClientThread client : clients){
+					if(p1.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+						client.out.writeObject(p1.clientMessage);
+					}
+					if(p2.clientMessage.userInfo.username == client.clientMessage.userInfo.username){
+						client.out.writeObject(p1.clientMessage);
+					}
+
+				}
+
+				System.out.println("Pairing clients:");
+				System.out.println(" -> " + p1.clientMessage.userInfo.username + " is paired with " + p2.clientMessage.userInfo.username + " " + p1.clientMessage.getType());
+				System.out.println(" -> " + p2.clientMessage.userInfo.username + " is paired with " + p1.clientMessage.userInfo.username + " " + p2.clientMessage.getType());
+
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			return true;
         }
@@ -196,14 +200,15 @@ public class Server{
 
 		    while(true) {
 				ClientThread c = new ClientThread(mysocket.accept(), count);
-				callback.accept("client has connected to server: " + "client #" + count);
+//				callback.accept("client has connected to server: " + "client #" + count);
+				callback.accept(new Message());
 				clients.add(c);
 				c.start();
 
 				count++;
 			    }
 			} catch(Exception e) {
-				callback.accept("Server socket did not launch");
+				callback.accept(new Message());
 				}
 			}
 		}
@@ -242,12 +247,14 @@ public class Server{
 //				}
 
 				if(message.getType().equals("Login")){
+					message.setIndex(count);
 					message.setLoginCheck(checkLogin(message));
 					if (message.isLoginCheck()) {
 						client.userInfo = users.get(message.userInfo.username);
 						message.userInfo = users.get(message.userInfo.username);
 					}
 				} else if (message.getType().equals("Sign Up")) {
+					message.setIndex(count);
 					message.setLoginCheck(checkSignUp(message));
 				} else if (message.getType().equals("Random Game Start")) {
 					randomMatchMaking.add(client);
@@ -257,14 +264,17 @@ public class Server{
 
 				message.allUsers = getAllUsers();
 				message.users = users;
-				if(!pair2ClientsRandomly() || !message.getType().equals("Send Chat")) {
-					client.clientMessage = message;
+				client.clientMessage = message;
+				client.userInfo = message.userInfo;
+				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
+				if(!pair2ClientsRandomly()){
 					try {
-						System.out.println(client.clientMessage.toString());
 						client.out.writeObject(message);
 					}
 					catch(Exception e) {}
 				}
+
+
 
 			}
 
@@ -292,87 +302,88 @@ public class Server{
 							Message data = (Message) in.readObject();
 							updateClients(data, this);
 
-
+							System.out.println("Count: " + count);
 							String STATUS = data.getType();
-							System.out.println(STATUS);
-							switch (STATUS) {
-								case "Login":
-									if(data.isLoginCheck()) {
-										callback.accept("client #" + count + " logged in as: " + data.userInfo.username);
-									}
-									else {
-										callback.accept("client #" + count + " failed to login");
-									}
-									break;
-
-								case "Sign Up":
-									if(data.isLoginCheck()) {
-										callback.accept("client #" + count + " created account: " + data.userInfo.username);
-									}
-									else {
-										callback.accept("client #" + count + " failed to create an account");
-									}
-									break;
-
-								case "Logout":
-									callback.accept(data.userInfo.username + " logged out from server");
-
-									break;
-
-								case "Friends":
-									callback.accept(data.userInfo.username + " has requested friend details");
-									break;
-
-								case "High Scores":
-									callback.accept(data.userInfo.username + " requested high score details");
-									break;
-
-								case "Win":
-									callback.accept(data.userInfo.username + " won the game");
-
-									break;
-
-								case "Lose":
-									callback.accept(data.userInfo.username + " lost the game");
-									break;
-
-								case "Send Chat":
-									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
-
-									break;
-								case "Receive Chat":
+//							System.out.println(STATUS);
+//							switch (STATUS) {
+//								case "Login":
+//									if(data.isLoginCheck()) {
+////										callback.accept("client #" + count + " logged in as: " + data.userInfo.username);
+//									}
+//									else {
+//										callback.accept("client #" + count + " failed to login");
+//									}
+//									break;
+//
+//								case "Sign Up":
+//									if(data.isLoginCheck()) {
+//										callback.accept("client #" + count + " created account: " + data.userInfo.username);
+//									}
+//									else {
+//										callback.accept("client #" + count + " failed to create an account");
+//									}
+//									break;
+//
+//								case "Logout":
+//									callback.accept(data.userInfo.username + " logged out from server");
+//
+//									break;
+//
+//								case "Friends":
+//									callback.accept(data.userInfo.username + " has requested friend details");
+//									break;
+//
+//								case "High Scores":
+//									callback.accept(data.userInfo.username + " requested high score details");
+//									break;
+//
+//								case "Win":
+//									callback.accept(data.userInfo.username + " won the game");
+//
+//									break;
+//
+//								case "Lose":
+//									callback.accept(data.userInfo.username + " lost the game");
+//									break;
+//
+//								case "Send Chat":
 //									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
-									break;
-
-								case "Move":
-									callback.accept(data.userInfo.username + " moved");
-
-									break;
-
-								case "Random Game Start":
-									callback.accept(data.userInfo.username + " is waiting for an opponent");
-
-									break;
-
-								case "Paired":
-									callback.accept(data.userInfo.username + " is paired with " + data.getOpponent());
-
-									break;
-
-								case "Server Game Start":
-									callback.accept(data.userInfo.username + " started a game with the server");
-
-									break;
-
-								default:
-									callback.accept("client: " + count + " connected to server ");
-									break;
-							}
+//
+//									break;
+//								case "Receive Chat":
+////									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+//									break;
+//
+//								case "Move":
+//									callback.accept(data.userInfo.username + " moved");
+//
+//									break;
+//
+//								case "Random Game Start":
+//									callback.accept(data.userInfo.username + " is waiting for an opponent");
+//
+//									break;
+//
+//								case "Paired":
+//									callback.accept(data.userInfo.username + " is paired with " + data.getOpponent());
+//
+//									break;
+//
+//								case "Server Game Start":
+//									callback.accept(data.userInfo.username + " started a game with the server");
+//
+//									break;
+//
+//								default:
+//									callback.accept("client: " + count + " connected to server ");
+//									break;
+//							}
 //							updateClients("client #"+count+" said: " + data);
-					    	}
+					    callback.accept(data);
+						}
 					    catch(Exception e) {
 							e.printStackTrace();
-							callback.accept("OOOOPPs...Something wrong with the socket from client: " + count + "....closing down!");
+//							callback.accept("OOOOPPs...Something wrong with the socket from client: " + count + "....closing down!");
 //							updateClients("Client #"+count+" has left the server!");
 							clients.remove(this);
 							break;

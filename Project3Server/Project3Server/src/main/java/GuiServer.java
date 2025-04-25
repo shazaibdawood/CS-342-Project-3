@@ -32,7 +32,93 @@ public class GuiServer extends Application{
 	public void start(Stage primaryStage) throws Exception {
 		serverConnection = new Server(data -> {
 			Platform.runLater(()->{
-				listItems.getItems().add(data.toString());
+				String STATUS = data.getType();
+				System.out.println("Status: " + STATUS);
+				switch (STATUS) {
+					case "Login":
+						if(data.isLoginCheck()) {
+							listItems.getItems().add("client #" + data.getIndex() + " logged in as: " + data.userInfo.username);
+						}
+						else {
+							listItems.getItems().add("client #" + data.getIndex() + " failed to login");
+						}
+						break;
+
+					case "Sign Up":
+						if(data.isLoginCheck()) {
+							listItems.getItems().add("client #" + data.getIndex() + " created account: " + data.userInfo.username);
+						}
+						else {
+							listItems.getItems().add("client #" + data.getIndex() + " failed to create an account");
+						}
+						break;
+
+					case "Logout":
+						listItems.getItems().add(data.userInfo.username + " logged out of account");
+
+						break;
+
+					case "Friends":
+						listItems.getItems().add(data.userInfo.username + " has requested friend details");
+						break;
+
+					case "High Scores":
+						listItems.getItems().add(data.userInfo.username + " requested high score details");
+						break;
+
+					case "Win":
+						listItems.getItems().add(data.userInfo.username + " won the game");
+
+						break;
+
+					case "Lose":
+						listItems.getItems().add(data.userInfo.username + " lost the game");
+						break;
+
+					case "Send Chat":
+						listItems.getItems().add(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+
+						break;
+					case "Receive Chat":
+//									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
+						break;
+
+					case "Move":
+						listItems.getItems().add(data.userInfo.username + " moved");
+
+						break;
+
+					case "Random Game Start":
+						listItems.getItems().add(data.userInfo.username + " is waiting for an opponent");
+
+						break;
+
+					case "Paired":
+						listItems.getItems().add(data.userInfo.username + " is paired with " + data.getOpponent());
+
+						break;
+
+					case "Server Game Start":
+						listItems.getItems().add(data.userInfo.username + " started a game with the server");
+
+						break;
+					case "Disconnect":
+						if(data.userInfo.username == null || data.userInfo.username.isEmpty()) {
+							listItems.getItems().add("client #" + data.getIndex() + " logged out of server");
+						}
+						else {
+							listItems.getItems().add(data.userInfo.username + " disconnected from server");
+						}
+
+						break;
+					case "":
+						listItems.getItems().add("client #" + (serverConnection.count - 1) + " connected to server");
+
+						break;
+					default:
+//						listItems.getItems().add("client #" + serverConnection.count + " connected to server");
+						break;
+				}
 			});
 		});
 

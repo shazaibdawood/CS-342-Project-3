@@ -71,8 +71,8 @@ public class GuiClient extends Application{
 ////				System.out.println(test.getType());
 		// });
 			Platform.runLater(()->{
-				user=data;
-				System.out.println(user.userInfo.username);
+				user = data;
+				System.out.println("Data: " + data.getType() + ": " + data.userInfo.username + " " + data.toString() + " " + data.getOpponent());
 			});
 
 
@@ -88,6 +88,8 @@ public class GuiClient extends Application{
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			@Override
 			public void handle(WindowEvent t) {
+				user.setType("Disconnect");
+				clientConnection.send(user);
 				Platform.exit();
 				System.exit(0);
 			}
@@ -168,7 +170,7 @@ public class GuiClient extends Application{
 			user.setType("Random Game Start");
 			user.setOpponent(user.userInfo.username);
 
-			user = clientConnection.sendAndWait(user);
+			clientConnection.send(user);
 
 			masterPane.setCenter(drawGameScreen());
 		});

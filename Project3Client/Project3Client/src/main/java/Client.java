@@ -42,14 +42,15 @@ public class Client extends Thread{
 				}
 
 				String STATUS = message.getType();
-				switch(STATUS) {
-					case "Send Chat":
-						//callback.accept(message.userInfo.username + ": " + message.toString());
-						break;
-					case "Receive Chat":
-						//callback.accept(message.opponent + ": " + message.toString());
-						break;
-				}
+//				switch(STATUS) {
+//					case "Send Chat":
+//						//callback.accept(message.userInfo.username + ": " + message.toString());
+//						break;
+//					case "Receive Chat":
+//						//callback.accept(message.opponent + ": " + message.toString());
+//						break;
+//				}
+				callback.accept(message);
 				System.out.println("Received " + STATUS + ": " + message.userInfo.username + " " + message.toString() + " " + message.getOpponent());
 			}
 			catch(Exception e) {
