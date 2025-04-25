@@ -169,7 +169,7 @@ public class Server{
 		String chat = message.toString();
 		ClientThread opponent = findUser(message.getOpponent());
 		if(opponent != null){
-			System.out.println(message.getOpponent() + message.getType()+message.userInfo.username);
+			System.out.println("To: " + message.getOpponent() +"Type: " +  message.getType()+ "From: " +message.userInfo.username);
 			opponent.clientMessage.setMessage(chat);
 			opponent.clientMessage.setType("Receive Chat");
 			try {
