@@ -340,7 +340,7 @@ public class Server{
 //				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
 				boolean paired = pair2ClientsRandomly();
 
-				if(!paired && !message.getType().equals("Send Chat")){
+				if(!paired && !message.getType().equals("Send Chat") && !message.getType().equals("Paired")){
 					try {
 						client.out.writeObject(message);
 					}
