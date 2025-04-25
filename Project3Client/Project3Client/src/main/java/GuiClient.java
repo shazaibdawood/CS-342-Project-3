@@ -84,6 +84,7 @@ public class GuiClient extends Application{
 						chatLogs.getItems().add(data.opponent + ": " + data.getMessage());
 						break;
 					case "Paired":
+						clientConnection.send(user);
 						chatLogs.getItems().add(data.userInfo.username + " is paired with " + data.getOpponent());
 						break;
 					default:
