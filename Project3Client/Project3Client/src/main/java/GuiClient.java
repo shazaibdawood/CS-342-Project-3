@@ -24,6 +24,7 @@ import static java.lang.Math.max;
 
 public class GuiClient extends Application{
 	public static Message user = new Message();
+	private String pendingFriendRequest = null;
 
 	HBox TITLE_SCREEN_BOX = getTITLE_SCREEN_BOX();
 
@@ -41,6 +42,8 @@ public class GuiClient extends Application{
 	Button friendsButton = new Button("Friends");
 	Button backButton = new Button("Back");
 	Button sendButton = new Button("Send");
+	Button friendRequestButton = new Button("Friend Request");
+
 
 	Client clientConnection;
 
@@ -71,7 +74,12 @@ public class GuiClient extends Application{
 ////				System.out.println(test.getType());
 		// });
 			Platform.runLater(()->{
-				user = data;
+				if (data.userInfo != null && data.userInfo.username != null && data.userInfo.username.equals(user.userInfo.username)) {
+					user = data;
+				} else {
+					user.allUsers = data.allUsers;
+					user.users    = data.users;
+				}
 //				System.out.println("Data: " + data.toString());
 //				System.out.println("User: " + user.toString());
 				String STATUS = data.getType();
@@ -84,8 +92,18 @@ public class GuiClient extends Application{
 						chatLogs.getItems().add(data.opponent + ": " + data.getMessage());
 						break;
 					case "Paired":
-						clientConnection.send(user);
+						//clientConnection.send(user);
 						chatLogs.getItems().add(data.userInfo.username + " is paired with " + data.getOpponent());
+						break;
+					case "Friend Request Incoming":
+						pendingFriendRequest = data.userInfo.username;
+						chatLogs.getItems().add("You received a friend request from " + pendingFriendRequest + ". Type 'accept' or 'decline'.");
+						break;
+					case "Friend List Updated":
+						user.userInfo = data.userInfo;
+						user.allUsers = data.allUsers;
+						user.users    = data.users;
+						chatLogs.getItems().add("Friend list updated!");
 						break;
 					default:
 						break;
@@ -200,11 +218,56 @@ public class GuiClient extends Application{
 			masterPane.setCenter(drawGameScreen());
 		});
 
-		sendButton.setOnAction(e->{
-			user.setType("Send Chat");
-			user.setMessage(message.getText());
-			clientConnection.send(user);
+//		sendButton.setOnAction(e->{
+//			if (pendingFriendRequest != null && (message.getText().toLowerCase().equals("accept") || message.getText().toLowerCase().equals("decline"))) {
+//				user.setType("Friend Request Response");
+//				user.setMessage(message.getText().toLowerCase());
+//				user.setOpponent(pendingFriendRequest);
+//				clientConnection.send(user);
+//				pendingFriendRequest = null;
+//			}
+//			else {
+//				user.setType("Send Chat");
+//				user.setMessage(message.getText());
+//				clientConnection.send(user);
+//			}
+//			message.clear();
+//		});
+		sendButton.setOnAction(e -> {
+			String txt = message.getText().trim();
+			if (txt.isEmpty()) return;
+
+			if (pendingFriendRequest != null &&
+					(txt.equalsIgnoreCase("accept") || txt.equalsIgnoreCase("decline"))) {
+
+				Message rsp = new Message();                 // fresh packet
+				rsp.userInfo = user.userInfo;
+				rsp.setType("Friend Request Response");
+				rsp.setOpponent(pendingFriendRequest);
+				rsp.setMessage(txt.toLowerCase());
+				clientConnection.send(rsp);
+				pendingFriendRequest = null;
+
+			} else {                                         // normal chat
+				Message chat = new Message();                // fresh packet  ← NEW
+				chat.userInfo = user.userInfo;
+				chat.setType("Send Chat");
+				chat.setOpponent(user.getOpponent());        // whom you’re talking to
+				chat.setMessage(txt);
+				clientConnection.send(chat);                 // server echoes to both
+			}
 			message.clear();
+		});
+		friendRequestButton.setOnAction(e->{
+			//if (!message.getText().isEmpty()) {
+				Message request = new Message();
+				request.userInfo= user.userInfo;
+				request.setType("Friend Request");
+				request.setOpponent(user.getOpponent());
+				clientConnection.send(request);
+				chatLogs.getItems().add("Friend request sent to " + user.getOpponent() + ".");
+				message.clear();
+				//}
 		});
 
 		Scene scene = new Scene(masterPane, 700, 700);
@@ -631,13 +694,13 @@ public class GuiClient extends Application{
 		HBox GAME_BOX = new HBox(10, CHAT_BOX, BOARD_BOX);
 		GAME_BOX.setAlignment(Pos.CENTER);
 
-		logoutButton.setPrefWidth(100);
-		logoutButton.setPrefHeight(25);
+		friendRequestButton.setPrefWidth(100);
+		friendRequestButton.setPrefHeight(25);
 		backButton.setPrefWidth(100);
 		backButton.setPrefHeight(25);
 		Region spacer2 = new Region();
 		HBox.setHgrow(spacer2, Priority.ALWAYS);
-		HBox LOGOUT_BACK_BOX = new HBox(10, logoutButton, spacer2, backButton);
+		HBox LOGOUT_BACK_BOX = new HBox(10, friendRequestButton, spacer2, backButton);
 		LOGOUT_BACK_BOX.setAlignment(Pos.CENTER);
 		LOGOUT_BACK_BOX.setPadding(new Insets(10, 10, 10, 10));
 

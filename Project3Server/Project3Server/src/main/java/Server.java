@@ -183,6 +183,8 @@ public class Server{
 			try {
 				p1.out.writeObject(message1);
 				p2.out.writeObject(message2);
+				callback.accept(message1);
+				callback.accept(message2);
 				p1.clientMessage = message1;
 				p2.clientMessage = message2;
 				updateClientMessage(message1);
@@ -242,6 +244,84 @@ public class Server{
 				updateClientMessage(message1);
 				updateClientMessage(message2);
 			} catch (Exception e) {}
+		}
+	}
+
+	public void handleFriendRequest(Message message) {
+		ClientThread sender = findUser(message.userInfo.username);
+		ClientThread target = findUser(message.getOpponent());
+
+		if (message.getType().equals("Friend Request")) {
+			if (target != null) {
+				String targetName = target.clientMessage.userInfo.username;
+				Message request = new Message();
+				request.userInfo = sender.clientMessage.userInfo;
+				request.setOpponent(targetName);
+				request.setType("Friend Request Incoming");
+				request.allUsers = getAllUsers();
+				request.users = users;
+				request.setIndex(target.count);
+				request.setMessage(sender.clientMessage.userInfo.username + " sent you a friend request!");
+
+				try {
+					target.out.writeObject(request);
+					target.clientMessage = request;
+					updateClientMessage(request);
+
+					Message confirm = new Message();
+					confirm.userInfo = sender.clientMessage.userInfo;
+					confirm.setOpponent(targetName);
+					confirm.setType("Send Chat");
+					confirm.allUsers = getAllUsers();
+					confirm.users = users;
+					confirm.setIndex(sender.count);
+					confirm.setMessage("Friend request sent to " + targetName + ".");
+
+					sender.out.writeObject(confirm);
+					sender.clientMessage = confirm;
+					updateClientMessage(confirm);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		else if (message.getType().equals("Friend Request Response")) {
+			String response = message.getMessage().toLowerCase();
+			String requesterName = message.getOpponent();
+			String responderName = message.userInfo.username;
+
+			ClientThread requesterClient = findUser(requesterName);
+			ClientThread responderClient = findUser(responderName);
+
+			if (response.equals("accept")) {
+				if (users.containsKey(requesterName) && users.containsKey(responderName)) {
+					users.get(requesterName).friends.add(responderName);
+					users.get(responderName).friends.add(requesterName);
+					saveUserData();
+
+					if (requesterClient != null) {
+						sendFriendListUpdate(requesterClient);
+					}
+					if (responderClient != null) {
+						sendFriendListUpdate(responderClient);
+					}
+				}
+			}
+		}
+	}
+
+	private void sendFriendListUpdate(ClientThread client) {
+		try {
+			Message updated = new Message();
+			updated.setType("Friend List Updated");
+			updated.userInfo = users.get(client.clientMessage.userInfo.username);
+			updated.allUsers = getAllUsers();
+			updated.users = users;
+			updated.setOpponent(client.clientMessage.getOpponent());
+			client.out.writeObject(updated);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -332,6 +412,10 @@ public class Server{
 					randomMatchMaking.add(client);
 				} else if (message.getType().equals("Send Chat")) {
 					sendChat(message);
+				} else if (message.getType().equals("Friend Request") || message.getType().equals("Friend Request Response")) {
+					handleFriendRequest(message);
+				} else if(message.getType().equals("Friend Request Response")) {
+					System.out.println(message.userInfo.username + " responded '" + message.getMessage() + "' to friend request from " + message.getOpponent());
 				}
 
 				message.allUsers = getAllUsers();
@@ -340,7 +424,7 @@ public class Server{
 //				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
 				boolean paired = pair2ClientsRandomly();
 
-				if(!paired && !message.getType().equals("Send Chat") && !message.getType().equals("Paired")){
+				if((!paired || message.getType().equals("Friends") )&& !message.getType().equals("Send Chat") && !message.getType().equals("Paired")){
 					try {
 						client.out.writeObject(message);
 					}
