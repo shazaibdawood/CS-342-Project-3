@@ -24,7 +24,7 @@ import static java.lang.Math.max;
 
 public class GuiClient extends Application{
 	public static Message user = new Message();
-
+	private String pendingFriendRequest = null;
 	HBox TITLE_SCREEN_BOX = getTITLE_SCREEN_BOX();
 
 	TextField username = new TextField();
@@ -99,9 +99,12 @@ public class GuiClient extends Application{
 		// });
 
 			Platform.runLater(()->{
-				user = data;
-//				System.out.println("Data: " + data.toString());
-//				System.out.println("User: " + user.toString());
+				if (data.userInfo != null && data.userInfo.username != null && data.userInfo.username.equals(user.userInfo.username)) {
+					user = data;
+				} else {
+					user.allUsers = data.allUsers;
+					user.users    = data.users;
+				}
 				String STATUS = data.getType();
 				System.out.println(STATUS);
 				switch(STATUS){
@@ -172,8 +175,20 @@ public class GuiClient extends Application{
 						column6Button.setDisable(true);
 						column7Button.setDisable(true);
 						break;
+					case "Friend Request Incoming":
+						pendingFriendRequest = data.userInfo.username;
+						chatLogs.getItems().add("You received a friend request from " + pendingFriendRequest + ". Type 'accept' or 'decline'.");
+						break;
+					case "Friend List Updated":
+						user.userInfo = data.userInfo;
+						user.allUsers = data.allUsers;
+						user.users    = data.users;
+						chatLogs.getItems().add("Friend list updated!");
+						break;
+
 					default:
 						break;
+
 				}
 			});
 			});
@@ -282,24 +297,32 @@ public class GuiClient extends Application{
 			masterPane.setCenter(drawGameScreen());
 		});
 
-		sendButton.setOnAction(e->{
-			if(user.getType().equals("Friend Request")){
-				if(message.getText().equals("Accept") || message.getText().equals("accept")){
-					user.setType("Friend Accepted");
-					clientConnection.send(user);
-				}
-				else {
-					user.setType("Friend Rejected");
-					clientConnection.send(user);
-				}
+		sendButton.setOnAction(e -> {
+			String txt = message.getText().trim();
+			if (txt.isEmpty()) return;
+
+			if (pendingFriendRequest != null &&
+					(txt.equalsIgnoreCase("accept") || txt.equalsIgnoreCase("decline"))) {
+
+				Message rsp = new Message();                 // fresh packet
+				rsp.userInfo = user.userInfo;
+				rsp.setType("Friend Request Response");
+				rsp.setOpponent(pendingFriendRequest);
+				rsp.setMessage(txt.toLowerCase());
+				clientConnection.send(rsp);
+				pendingFriendRequest = null;
+
+			} else {                                         // normal chat
+				Message chat = new Message();                // fresh packet  ← NEW
+				chat.userInfo = user.userInfo;
+				chat.setType("Send Chat");
+				chat.setOpponent(user.getOpponent());        // whom you’re talking to
+				chat.setMessage(txt);
+				clientConnection.send(chat);                 // server echoes to both
 			}
-			else {
-				user.setType("Send Chat");
-				user.setMessage(message.getText());
-				clientConnection.send(user);
-				message.clear();
-			}
+			message.clear();
 		});
+
 
 		clearMoveButton.setOnAction(e->{
 			tempBoard = user.getBoard();
@@ -340,17 +363,15 @@ public class GuiClient extends Application{
 		});
 
 		friendRequestButton.setOnAction(e->{
-			user.setType("Friend Request");
-			user.setMessage(""); // Clear any previous message
-			user = clientConnection.sendAndWait(user);
-			if (user.getType().equals("Friend Accepted")) {
-				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was accepted!");
-				user.userInfo.friends.add(user.getOpponent());
-			} else if (user.getType().equals("Friend Rejected")) {
-				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was rejected");
-			}
-
-			friendRequestButton.setDisable(true);
+			//if (!message.getText().isEmpty()) {
+			Message request = new Message();
+			request.userInfo= user.userInfo;
+			request.setType("Friend Request");
+			request.setOpponent(user.getOpponent());
+			clientConnection.send(request);
+			chatLogs.getItems().add("Friend request sent to " + user.getOpponent() + ".");
+			message.clear();
+			//}
 		});
 
 		column1Button.setOnAction(e->{

@@ -62,6 +62,23 @@ public class GuiServer extends Application{
 						listItems.getItems().add(data.userInfo.username + " has requested friend details");
 						break;
 
+						case "Friend Request":
+						listItems.getItems().add(data.userInfo.username + " has requested friend request");
+
+						break;
+
+					case "Friend Request Response":
+						if (data.getMessage().toLowerCase().equals("accept")) {
+							listItems.getItems().add(data.userInfo.username + " accepted the friend request from " + data.getOpponent());
+
+						}
+
+						else if (data.getMessage().toLowerCase().equals("decline")) {
+							listItems.getItems().add(data.userInfo.username + " declined the friend request from " + data.getOpponent());
+
+						}
+						break;
+
 					case "High Scores":
 						listItems.getItems().add(data.userInfo.username + " requested high score details");
 						break;

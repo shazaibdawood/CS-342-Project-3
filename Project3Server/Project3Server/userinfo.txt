@@ -14,7 +14,7 @@ sunnydayz,sunshine,9,1,0,10,karen23
 gigglesbob,gigglesbob,0,0,0,0,
 devon_x,ilovecats,7,2,1,10,matt_thegamer
 sophie_l,password,1,9,0,10,
-tim,cheese,0,1,0,1,
+tim,cheese,0,1,0,1,john
 john,pork,0,0,0,0,
 jake99,password1,5,3,2,10,emily_rose;alex2020
 ava_skyline,pass1234,3,6,1,10,

@@ -450,12 +450,84 @@ public class Server{
 		}
 	}
 
-	public void friendRequest(Message message) {
-		ClientThread p1 = findUser(message.userInfo.username);
-		ClientThread p2 = findUser(message.getOpponent());
+	public void handleFriendRequest(Message message) {
+		ClientThread sender = findUser(message.userInfo.username);
+		ClientThread target = findUser(message.getOpponent());
 
+		if (message.getType().equals("Friend Request")) {
+			if (target != null) {
+				String targetName = target.clientMessage.userInfo.username;
+				Message request = new Message();
+				request.userInfo = sender.clientMessage.userInfo;
+				request.setOpponent(targetName);
+				request.setType("Friend Request Incoming");
+				request.allUsers = getAllUsers();
+				request.users = users;
+				request.setIndex(target.count);
+				request.setMessage(sender.clientMessage.userInfo.username + " sent you a friend request!");
 
+				try {
+					target.out.writeObject(request);
+					target.clientMessage = request;
+					updateClientMessage(request);
+
+					Message confirm = new Message();
+					confirm.userInfo = sender.clientMessage.userInfo;
+					confirm.setOpponent(targetName);
+					confirm.setType("Send Chat");
+					confirm.allUsers = getAllUsers();
+					confirm.users = users;
+					confirm.setIndex(sender.count);
+					confirm.setMessage("Friend request sent to " + targetName + ".");
+
+					sender.out.writeObject(confirm);
+					sender.clientMessage = confirm;
+					updateClientMessage(confirm);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		else if (message.getType().equals("Friend Request Response")) {
+			String response = message.getMessage().toLowerCase();
+			String requesterName = message.getOpponent();
+			String responderName = message.userInfo.username;
+
+			ClientThread requesterClient = findUser(requesterName);
+			ClientThread responderClient = findUser(responderName);
+
+			if (response.equals("accept")) {
+				if (users.containsKey(requesterName) && users.containsKey(responderName)) {
+					users.get(requesterName).friends.add(responderName);
+					users.get(responderName).friends.add(requesterName);
+					saveUserData();
+
+					if (requesterClient != null) {
+						sendFriendListUpdate(requesterClient);
+					}
+					if (responderClient != null) {
+						sendFriendListUpdate(responderClient);
+					}
+				}
+			}
+		}
 	}
+
+	private void sendFriendListUpdate(ClientThread client) {
+		try {
+			Message updated = new Message();
+			updated.setType("Friend List Updated");
+			updated.userInfo = users.get(client.clientMessage.userInfo.username);
+			updated.allUsers = getAllUsers();
+			updated.users = users;
+			updated.setOpponent(client.clientMessage.getOpponent());
+			client.out.writeObject(updated);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 
 	private String checkWin(int[][] board){
 		for(int i = 0; i < board.length; i++){
@@ -603,8 +675,11 @@ public class Server{
 				} else if(message.getType().equals("Disconnect")) {
 					users.put(message.userInfo.username, message.userInfo);
 					return;
-				}else if(message.getType().equals("Friend Request")) {
-					users.put(message.userInfo.username, message.userInfo);
+				}else if (message.getType().equals("Friend Request") || message.getType().equals("Friend Request Response")) {
+					handleFriendRequest(message);
+					return;
+				} else if(message.getType().equals("Friend Request Response")) {
+					System.out.println(message.userInfo.username + " responded '" + message.getMessage() + "' to friend request from " + message.getOpponent());
 					return;
 				}
 
