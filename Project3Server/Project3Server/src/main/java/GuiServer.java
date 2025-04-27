@@ -74,6 +74,9 @@ public class GuiServer extends Application{
 					case "Lose":
 						listItems.getItems().add(data.userInfo.username + " lost the game");
 						break;
+					case "Draw":
+						listItems.getItems().add(data.userInfo.username + " and " + data.getOpponent() + " tied");
+						break;
 
 					case "Send Chat":
 						listItems.getItems().add(data.userInfo.username + " sent: " + data.getMessage() + " to: " + data.getOpponent());
@@ -83,8 +86,12 @@ public class GuiServer extends Application{
 //									callback.accept(data.userInfo.username + " sent: " + data.getMessage() + " to: " + data.getOpponent());
 						break;
 
-					case "Move":
-						listItems.getItems().add(data.userInfo.username + " moved");
+					case "Send Move":
+						listItems.getItems().add(data.userInfo.username + " made a move");
+
+						break;
+					case "Receive Move":
+						listItems.getItems().add(data.getOpponent() + " made a move");
 
 						break;
 

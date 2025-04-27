@@ -171,6 +171,7 @@ public class Server{
 			message1.allUsers = getAllUsers();
 			message1.users = users;
 			message1.setIndex(p1.count);
+			message1.setLoginCheck(true);
 
 			Message message2 = new Message();
 			message2.userInfo = p2.clientMessage.userInfo;
@@ -179,6 +180,7 @@ public class Server{
 			message2.allUsers = getAllUsers();
 			message2.users = users;
 			message2.setIndex(p2.count);
+			message2.setLoginCheck(false);
 
 			try {
 				p1.out.writeObject(message1);
@@ -191,7 +193,7 @@ public class Server{
 //				System.out.println("Pairing clients:");
 //				System.out.println(message1.toString());
 //				System.out.println(message2.toString());
-
+				randomMatchMaking.clear();
 				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -201,13 +203,35 @@ public class Server{
 		return false;
 	}
 	private void updateClientMessage(Message message){
+		users.put(message.userInfo.username, message.userInfo);
 		for(ClientThread client : clients){
 			if(client.clientMessage.userInfo.username.equals(message.userInfo.username)){
 				client.clientMessage = message;
 				return;
 			}
 		}
+
 	}
+	public void serverGameStart(Message message){
+		ClientThread p1 = findUser(message.userInfo.username);
+		Message message1 = new Message();
+		message1.userInfo = p1.clientMessage.userInfo;
+		message1.setOpponent("SERVER");
+		message1.setType("Paired");
+		message1.allUsers = getAllUsers();
+		message1.users = users;
+		message1.setIndex(p1.count);
+		message1.setLoginCheck(true);
+
+		try {
+			p1.out.writeObject(message1);
+			p1.clientMessage = message1;
+			updateClientMessage(message1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void sendChat(Message message) {
 		String chat = message.getMessage();
 		ClientThread opponent = findUser(message.getOpponent());
@@ -224,6 +248,18 @@ public class Server{
 			message1.setMessage(chat);
 			message1.setBoard(opponent.clientMessage.getBoard());
 
+			try {
+				opponent.out.writeObject(message1);
+				opponent.clientMessage = message1;
+				updateClientMessage(message1);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			System.out.println("opponent is null");
+		}
+		if(sender != null){
 			Message message2 = new Message();
 			message2.userInfo = message.userInfo;
 			message2.setOpponent(message.getOpponent());
@@ -233,16 +269,258 @@ public class Server{
 			message2.setIndex(message.getIndex());
 			message2.setMessage(chat);
 			try {
-				opponent.out.writeObject(message1);
-				opponent.clientMessage = message1;
-
 				sender.out.writeObject(message2);
 				sender.clientMessage = message2;
-
-				updateClientMessage(message1);
 				updateClientMessage(message2);
-			} catch (Exception e) {}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
+		else {
+			System.out.println("sender is null");
+		}
+	}
+	public void serverMove(Message message) {
+		ClientThread p1 = findUser(message.userInfo.username);
+
+		Message message1 = new Message();
+		message1.userInfo = p1.clientMessage.userInfo;
+		message1.setOpponent("SERVER");
+		message1.setType("Receive Move");
+		message1.allUsers = getAllUsers();
+		message1.users = users;
+		message1.setIndex(p1.count);
+		message1.setLoginCheck(true);
+
+		String gameStatus = checkWin(message.getBoard());
+		if(gameStatus.equals("Win")){
+			message1.setType("Win");
+			message1.userInfo.wins++;
+			message1.userInfo.totalGames++;
+			message1.setBoard(message.getBoard());
+			callback.accept(message1);
+		} else if (gameStatus.equals("Draw")) {
+			message1.setType("Draw");
+			message1.userInfo.draws++;
+			message1.userInfo.totalGames++;
+			message1.setBoard(message.getBoard());
+			callback.accept(message1);
+		} else {
+			message1.setType("Receive Move");
+			int[][] serverBoard = serverCalculateMove(reverseBoard(message.getBoard()));
+
+			gameStatus = checkWin(serverBoard);
+			if(gameStatus.equals("Win")){
+				message1.setType("Lose");
+				callback.accept(message1);
+			} else if (gameStatus.equals("Draw")) {
+				message1.setType("Draw");
+				callback.accept(message1);
+			} else {
+				message1.setType("Receive Move");
+			}
+
+			message1.setBoard(reverseBoard(serverBoard));
+		}
+		try {
+			p1.out.writeObject(message1);
+			p1.clientMessage = message1;
+			updateClientMessage(message1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+	public void sendMove(Message message) {
+		if(message.getOpponent().equals("SERVER")){
+			serverMove(message);
+			return;
+		}
+		ClientThread p1 = findUser(message.userInfo.username);
+		ClientThread p2 = findUser(message.getOpponent());
+
+		Message message1 = new Message();
+		message1.userInfo = p1.clientMessage.userInfo;
+		message1.setOpponent(p2.clientMessage.userInfo.username);
+		message1.setType("Send Move");
+		message1.allUsers = getAllUsers();
+		message1.users = users;
+		message1.setIndex(p1.count);
+		message1.setLoginCheck(false);
+
+		Message message2 = new Message();
+		message2.userInfo = p2.clientMessage.userInfo;
+		message2.setOpponent(p1.clientMessage.userInfo.username);
+		message2.setType("Receive Move");
+		message2.allUsers = getAllUsers();
+		message2.users = users;
+		message2.setIndex(p2.count);
+		message2.setLoginCheck(true);
+
+		String gameStatus = checkWin(message.getBoard());
+		if(gameStatus.equals("Win")){
+			message1.setType("Win");
+			message1.userInfo.wins++;
+			message1.userInfo.totalGames++;
+
+			message2.setType("Lose");
+			callback.accept(message1);
+			message1.userInfo.losses++;
+			message1.userInfo.totalGames++;
+		} else if (gameStatus.equals("Draw")) {
+			message1.setType("Draw");
+			message1.userInfo.draws++;
+			message1.userInfo.totalGames++;
+
+			message2.setType("Draw");
+			message1.userInfo.draws++;
+			message1.userInfo.totalGames++;
+			callback.accept(message1);
+		} else {
+			message1.setType("Send Move");
+			message2.setType("Receive Move");
+		}
+		message1.setBoard(message.getBoard());
+		message2.setBoard(reverseBoard(message.getBoard()));
+
+		try {
+			p1.out.writeObject(message1);
+			p2.out.writeObject(message2);
+			p1.clientMessage = message1;
+			p2.clientMessage = message2;
+			updateClientMessage(message1);
+			updateClientMessage(message2);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public void quitOrExitGame(Message message) {
+		ClientThread p1 = findUser(message.userInfo.username);
+		ClientThread p2 = findUser(message.getOpponent());
+
+		Message message1 = new Message();
+		message1.userInfo = p1.clientMessage.userInfo;
+		message1.setOpponent("");
+		message1.setType(message.getType());
+		message1.allUsers = getAllUsers();
+		message1.users = users;
+		message1.setIndex(p1.count);
+		message1.setLoginCheck(false);
+		message1.setBoard(message.getBoard());
+
+		Message message2 = new Message();
+		if(p2 != null) {
+			message2.userInfo = p2.clientMessage.userInfo;
+			message2.setOpponent(p1.clientMessage.userInfo.username);
+			message2.setType(p2.clientMessage.getType());
+			message2.allUsers = getAllUsers();
+			message2.users = users;
+			message2.setIndex(p2.count);
+			message2.setLoginCheck(true);
+			message2.setBoard(reverseBoard(message.getBoard()));
+		}
+
+		if(message.getType().equals("Quit")){
+			message1.setType("Quit");
+			message1.userInfo.losses++;
+			message1.userInfo.totalGames++;
+			message1.setOpponent("");
+
+			message2.setType("Win");
+			message2.userInfo.wins++;
+			message2.userInfo.totalGames++;
+		} else if(message.getType().equals("Exit")){
+			message1.setType("Exit");
+			message1.setOpponent("");
+		}
+
+		try {
+			if(p1 != null){
+				p1.out.writeObject(message1);
+				p1.clientMessage = message1;
+				updateClientMessage(message1);
+			}
+			if(p2 != null) {
+				p2.out.writeObject(message2);
+				p2.clientMessage = message2;
+				updateClientMessage(message2);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void friendRequest(Message message) {
+		ClientThread p1 = findUser(message.userInfo.username);
+		ClientThread p2 = findUser(message.getOpponent());
+
+
+	}
+
+	private String checkWin(int[][] board){
+		for(int i = 0; i < board.length; i++){
+			for (int j = 0; j < board[i].length; j++) {
+				if(at(board, i, j) == 1 && at(board, i, j + 1) == 1 && at(board, i, j + 2) == 1 && at(board, i, j + 3) == 1){
+					return "Win";
+				} else if(at(board, i, j) == 1 && at(board, i + 1, j) == 1 && at(board, i + 2, j) == 1 && at(board, i + 3, j) == 1){
+					return "Win";
+				} else if (at(board, i, j) == 1 && at(board, i + 1, j + 1) == 1 && at(board, i + 2, j + 2) == 1 && at(board, i + 3, j + 3) == 1) {
+					return "Win";
+				} else if (at(board, i, j) == 1 && at(board, i + 1, j - 1) == 1 && at(board, i + 2, j - 2) == 1 && at(board, i + 3, j - 3) == 1) {
+					return "Win";
+				}
+			}
+		}
+
+		for(int i = 0; i < board.length; i++){
+			for (int j = 0; j < board[i].length; j++) {
+				if(board[i][j] == 0){
+					return "Continue";
+				}
+			}
+		}
+
+		return "Draw";
+
+
+	}
+
+	private int[][] serverCalculateMove(int[][] board){
+		int[][] move = board.clone();
+		for(int i = 5; i >= 0; i--) {
+			for(int j = 0; j < 6; j++) {
+				if(move[i][j] == 0){
+					move[i][j] = 1;
+					return move;
+				}
+			}
+		}
+
+		return move;
+	}
+
+	private int[][] reverseBoard(int[][] board){
+		int[][] reverse = new int[6][7];
+		for(int i = 0; i < 6; i++){
+			for(int j = 0; j < 7; j++){
+				if(board[i][j] == 1){
+					reverse[i][j] = 2;
+				} else if (board[i][j] == 2) {
+					reverse[i][j] = 1;
+				}
+				else {
+					reverse[i][j] = board[i][j];
+				}
+			}
+		}
+		return reverse;
+	}
+
+	private int at(int[][] board, int row, int col){
+		if(row < board.length && col < board[row].length && row >= 0 && col >= 0){
+			return board[row][col];
+		}
+		return -1;
 	}
 
 	private boolean isAlNum(String s){
@@ -299,25 +577,7 @@ public class Server{
 			}
 
 			public void updateClients(Message message, ClientThread client) throws IOException {
-//				System.out.println(message);
-//				if(message.recipient == 0) {
-//					for (ClientThread client : clients) {
-//						if (this != client) {
-//							client.send(message);
-//						}
-//					}
-//				} else {
-//					clients.get(message.recipient).send(message);
-//				}
-
-//				for(int i = 0; i < clients.size(); i++) {
-//					ClientThread t = clients.get(i);
-//					try {
-//						t.out.writeObject(message);
-//					}
-//					catch(Exception e) {}
-//				}
-
+				boolean paired = false;
 				if(message.getType().equals("Login")){
 					message.setIndex(count);
 					message.setLoginCheck(checkLogin(message));
@@ -332,15 +592,29 @@ public class Server{
 					randomMatchMaking.add(client);
 				} else if (message.getType().equals("Send Chat")) {
 					sendChat(message);
+					System.out.println("Stepping into Send Chat Method");
+				} else if (message.getType().equals("Send Move")) {
+					sendMove(message);
+				}
+				else if (message.getType().equals("Server Game Start")) {
+					serverGameStart(message);
+				} else if (message.getType().equals("Quit") || message.getType().equals("Exit")) {
+					quitOrExitGame(message);
+				} else if(message.getType().equals("Disconnect")) {
+					users.put(message.userInfo.username, message.userInfo);
+					return;
+				}else if(message.getType().equals("Friend Request")) {
+					users.put(message.userInfo.username, message.userInfo);
+					return;
 				}
 
 				message.allUsers = getAllUsers();
 				message.users = users;
 				client.clientMessage = message;
 //				System.out.println("Client: " + client.clientMessage.userInfo.username + " " + client.clientMessage.getOpponent() + " " + client.clientMessage.getType());
-				boolean paired = pair2ClientsRandomly();
-
-				if(!paired && !message.getType().equals("Send Chat") && !message.getType().equals("Paired")){
+				paired = pair2ClientsRandomly();
+				users.put(message.userInfo.username, message.userInfo);
+				if(!paired && !message.getType().equals("Send Chat") && !message.getType().equals("Paired") && !message.getType().equals("Send Move") && !message.getType().equals("Server Game Start")  && !message.getType().equals("Quit") && !message.getType().equals("Exit")) {
 					try {
 						client.out.writeObject(message);
 					}
@@ -351,13 +625,6 @@ public class Server{
 
 			}
 
-//			public void send(Message message){
-//                try {
-//                    out.writeObject(message);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
 			public void run(){
 				try {
 					in = new ObjectInputStream(connection.getInputStream());
@@ -368,92 +635,18 @@ public class Server{
 					System.err.println("Streams not open");
 				}
 
-//				updateClients("new client on server: client #"+count);
-
 				 while(true) {
 					    try {
 							Message data = (Message) in.readObject();
+							System.out.println("Recieved: " + data.toString());
 							callback.accept(data);
-
 							updateClients(data, this);
+							System.out.println("Sent: " + this.clientMessage.toString());
+							if(this.clientMessage.getType().equals("Paired")){
+								callback.accept(this.clientMessage);
+							}
+							System.out.println("Current list of clients");
 							printClients();
-//							System.out.println("Count: " + count);
-//							String STATUS = data.getType();
-//							System.out.println(STATUS);
-//							switch (STATUS) {
-//								case "Login":
-//									if(data.isLoginCheck()) {
-////										callback.accept("client #" + count + " logged in as: " + data.userInfo.username);
-//									}
-//									else {
-//										callback.accept("client #" + count + " failed to login");
-//									}
-//									break;
-//
-//								case "Sign Up":
-//									if(data.isLoginCheck()) {
-//										callback.accept("client #" + count + " created account: " + data.userInfo.username);
-//									}
-//									else {
-//										callback.accept("client #" + count + " failed to create an account");
-//									}
-//									break;
-//
-//								case "Logout":
-//									callback.accept(data.userInfo.username + " logged out from server");
-//
-//									break;
-//
-//								case "Friends":
-//									callback.accept(data.userInfo.username + " has requested friend details");
-//									break;
-//
-//								case "High Scores":
-//									callback.accept(data.userInfo.username + " requested high score details");
-//									break;
-//
-//								case "Win":
-//									callback.accept(data.userInfo.username + " won the game");
-//
-//									break;
-//
-//								case "Lose":
-//									callback.accept(data.userInfo.username + " lost the game");
-//									break;
-//
-//								case "Send Chat":
-//									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
-//
-//									break;
-//								case "Receive Chat":
-////									callback.accept(data.userInfo.username + " sent: " + data.toString() + " to: " + data.getOpponent());
-//									break;
-//
-//								case "Move":
-//									callback.accept(data.userInfo.username + " moved");
-//
-//									break;
-//
-//								case "Random Game Start":
-//									callback.accept(data.userInfo.username + " is waiting for an opponent");
-//
-//									break;
-//
-//								case "Paired":
-//									callback.accept(data.userInfo.username + " is paired with " + data.getOpponent());
-//
-//									break;
-//
-//								case "Server Game Start":
-//									callback.accept(data.userInfo.username + " started a game with the server");
-//
-//									break;
-//
-//								default:
-//									callback.accept("client: " + count + " connected to server ");
-//									break;
-//							}
-//							updateClients("client #"+count+" said: " + data);
 
 						}
 					    catch(Exception e) {

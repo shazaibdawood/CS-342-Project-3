@@ -36,7 +36,7 @@ public class Client extends Thread{
 			try {
 				Message message = (Message) in.readObject();
 //				System.out.println("========== NEW MESSAGE RECEIVED ==========");
-				System.out.println("Received " + message.toString());
+				System.out.println("Received " + message.toString() + message.userInfo.totalGames);
 
 				synchronized(lockingObject) {
 					responseMessage = message;

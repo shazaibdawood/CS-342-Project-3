@@ -41,6 +41,23 @@ public class GuiClient extends Application{
 	Button friendsButton = new Button("Friends");
 	Button backButton = new Button("Back");
 	Button sendButton = new Button("Send");
+	Button quitButton = new Button("Quit");
+	Button friendRequestButton = new Button("Friend Request");
+	Button sendMoveButton = new Button("Send Move");
+	Button clearMoveButton = new Button("Clear Move");
+
+	Button column1Button = new Button("Place");
+	Button column2Button = new Button("Place");
+	Button column3Button = new Button("Place");
+	Button column4Button = new Button("Place");
+	Button column5Button = new Button("Place");
+	Button column6Button = new Button("Place");
+	Button column7Button = new Button("Place");
+
+	int[][] tempBoard = user.getBoard();
+	boolean finalizedMove = false;
+	String gameStatus = "Continue";
+	boolean gameFinished = false;
 
 	Client clientConnection;
 
@@ -60,6 +77,16 @@ public class GuiClient extends Application{
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		BorderPane masterPane = new BorderPane();
+		masterPane.setCenter(drawLoginScreen());
+		column1Button.setDisable(true);
+		column2Button.setDisable(true);
+		column3Button.setDisable(true);
+		column4Button.setDisable(true);
+		column5Button.setDisable(true);
+		column6Button.setDisable(true);
+		column7Button.setDisable(true);
+
 		clientConnection = new Client(data->{
 //			Platform.runLater(()->{
 //				chatLogs.getItems().add(data.toString());
@@ -70,6 +97,7 @@ public class GuiClient extends Application{
 ////
 ////				System.out.println(test.getType());
 		// });
+
 			Platform.runLater(()->{
 				user = data;
 //				System.out.println("Data: " + data.toString());
@@ -84,21 +112,75 @@ public class GuiClient extends Application{
 						chatLogs.getItems().add(data.opponent + ": " + data.getMessage());
 						break;
 					case "Paired":
-						clientConnection.send(user);
+//						clientConnection.send(user);
+						finalizedMove = true;
+						gameFinished = false;
+						sendMoveButton.setDisable(true);
 						chatLogs.getItems().add(data.userInfo.username + " is paired with " + data.getOpponent());
+						if(user.isLoginCheck()){
+							chatLogs.getItems().add(data.userInfo.username + " moves first");
+						}
+						else {
+							chatLogs.getItems().add(data.getOpponent() + " moves first");
+						}
+						masterPane.setCenter(drawGameScreen());
+						break;
+					case "Receive Move":
+						chatLogs.getItems().add(data.opponent + " made a move");
+						tempBoard = user.getBoard();
+						finalizedMove = true;
+						masterPane.setCenter(drawGameScreen());
+						break;
+
+					case "Win":
+						chatLogs.getItems().add(data.userInfo.username + " won");
+						tempBoard = user.getBoard();
+						finalizedMove = true;
+						gameStatus = "Win";
+						gameFinished = true;
+						masterPane.setCenter(drawGameScreen());
+						break;
+
+					case "Lose":
+						chatLogs.getItems().add(data.userInfo.username + " lost");
+						tempBoard = user.getBoard();
+						finalizedMove = true;
+						gameFinished = true;
+						gameStatus = "Lose";
+						masterPane.setCenter(drawGameScreen());
+						break;
+					case "Draw":
+						chatLogs.getItems().add("Tie game");
+						tempBoard = user.getBoard();
+						finalizedMove = true;
+						gameFinished = true;
+						gameStatus = "Draw";
+						masterPane.setCenter(drawGameScreen());
+						break;
+					case "Quit":
+						gameStatus = "Continue";
+						masterPane.setCenter(drawWelcomeScreen());
+						break;
+					case "Friend Request":
+						sendMoveButton.setDisable(true);
+						clearMoveButton.setDisable(true);
+						column1Button.setDisable(true);
+						column2Button.setDisable(true);
+						column3Button.setDisable(true);
+						column4Button.setDisable(true);
+						column5Button.setDisable(true);
+						column6Button.setDisable(true);
+						column7Button.setDisable(true);
 						break;
 					default:
 						break;
 				}
 			});
-
-
 			});
 
 		clientConnection.start();
 
-		BorderPane masterPane = new BorderPane();
-		masterPane.setCenter(drawLoginScreen());
+
 //		masterPane.setCenter(drawWelcomeScreen());
 //		masterPane.setCenter(drawSignUpScreen());
 
@@ -185,7 +267,7 @@ public class GuiClient extends Application{
 
 		PVPButton.setOnAction(e->{
 			user.setType("Random Game Start");
-			user.setOpponent(user.userInfo.username);
+			user.setOpponent("");
 
 			clientConnection.send(user);
 
@@ -201,15 +283,219 @@ public class GuiClient extends Application{
 		});
 
 		sendButton.setOnAction(e->{
-			user.setType("Send Chat");
-			user.setMessage(message.getText());
+			if(user.getType().equals("Friend Request")){
+				if(message.getText().equals("Accept") || message.getText().equals("accept")){
+					user.setType("Friend Accepted");
+					clientConnection.send(user);
+				}
+				else {
+					user.setType("Friend Rejected");
+					clientConnection.send(user);
+				}
+			}
+			else {
+				user.setType("Send Chat");
+				user.setMessage(message.getText());
+				clientConnection.send(user);
+				message.clear();
+			}
+		});
+
+		clearMoveButton.setOnAction(e->{
+			tempBoard = user.getBoard();
+			finalizedMove = true;
+			sendMoveButton.setDisable(true);
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		sendMoveButton.setOnAction(e->{
+			user.setBoard(tempBoard);
+			user.setType("Send Move");
+			chatLogs.getItems().add(user.userInfo.username + " made a move");
 			clientConnection.send(user);
-			message.clear();
+
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(true);
+			clearMoveButton.setDisable(true);
+		});
+
+		quitButton.setOnAction(e->{
+			if(!gameFinished){
+				chatLogs.getItems().clear();
+				user.setType("Quit");
+				clientConnection.send(user);
+			}
+			else {
+				user.setType("Exit");
+				clientConnection.send(user);
+				chatLogs.getItems().clear();
+			}
+
+		});
+
+		friendRequestButton.setOnAction(e->{
+			user.setType("Friend Request");
+			user.setMessage(""); // Clear any previous message
+			user = clientConnection.sendAndWait(user);
+			if (user.getType().equals("Friend Accepted")) {
+				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was accepted!");
+				user.userInfo.friends.add(user.getOpponent());
+			} else if (user.getType().equals("Friend Rejected")) {
+				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was rejected");
+			}
+
+			friendRequestButton.setDisable(true);
+		});
+
+		column1Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][0] == 0){
+					tempBoard[i][0] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column2Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][1] == 0){
+					tempBoard[i][1] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column3Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][2] == 0){
+					tempBoard[i][2] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column4Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][3] == 0){
+					tempBoard[i][3] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column5Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][4] == 0){
+					tempBoard[i][4] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column6Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][5] == 0){
+					tempBoard[i][5] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+			sendMoveButton.setDisable(false);
+
+			masterPane.setCenter(drawGameScreen());
+		});
+
+		column7Button.setOnAction(e->{
+			finalizedMove = false;
+			for(int i = 5; i >= 0; i--) {
+				if(tempBoard[i][6] == 0){
+					tempBoard[i][6] = 1;
+					break;
+				}
+			}
+			column1Button.setDisable(true);
+			column2Button.setDisable(true);
+			column3Button.setDisable(true);
+			column4Button.setDisable(true);
+			column5Button.setDisable(true);
+			column6Button.setDisable(true);
+			column7Button.setDisable(true);
+
+			sendMoveButton.setDisable(false);
+			masterPane.setCenter(drawGameScreen());
 		});
 
 		Scene scene = new Scene(masterPane, 700, 700);
 		primaryStage.setWidth(800);
-		primaryStage.setHeight(600);
+		primaryStage.setHeight(650);
 		primaryStage.setResizable(false);
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -600,15 +886,28 @@ public class GuiClient extends Application{
 		VBox CHAT_BOX = new VBox(10, chatLogs, CHAT_SEND_BOX);
 		CHAT_BOX.setStyle("-fx-background-color: lightgray; -fx-padding: 10;");
 
-		VBox BOARD_BOX = new VBox(10);
-		BOARD_BOX.setAlignment(Pos.CENTER);
+		Text P1_LABEL = new Text("Player 1: " + user.userInfo.username);
+		P1_LABEL.setFont(new Font("Serif", 13));
+		P1_LABEL.setTextAlignment(TextAlignment.LEFT);
+		P1_LABEL.setFill(Color.RED);
+		Region spacer3 = new Region();
+		HBox.setHgrow(spacer3, Priority.ALWAYS);
+		Text P2_LABEL = new Text("Player 2: " + user.getOpponent());
+		P2_LABEL.setFont(new Font("Serif", 13));
+		P2_LABEL.setTextAlignment(TextAlignment.RIGHT);
+		P2_LABEL.setFill(Color.YELLOW);
+		HBox VERSUS_BOX = new HBox(10, P1_LABEL, spacer3, P2_LABEL);
 
-		int[][] board = user.getBoard();
-		for(int i = 0; i < board.length; i++) {
+		VBox BOARD_BOX = new VBox(10, VERSUS_BOX);
+		BOARD_BOX.setAlignment(Pos.CENTER);
+		BOARD_BOX.setBackground(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+		BOARD_BOX.setPadding(new Insets(10, 10, 10, 10));
+
+		for(int i = 0; i < tempBoard.length; i++) {
 			HBox BOARD_ROW = new HBox(10);
 			BOARD_ROW.setAlignment(Pos.CENTER);
-			for(int j = 0; j < board[0].length; j++) {
-				int value = board[i][j];
+			for(int j = 0; j < tempBoard[0].length; j++) {
+				int value = tempBoard[i][j];
 
 				Circle circle = new Circle(20);
 				circle.setStroke(Color.BLACK);
@@ -628,20 +927,54 @@ public class GuiClient extends Application{
 			BOARD_BOX.getChildren().add(BOARD_ROW);
 		}
 
+		if(gameStatus.equals("Continue")){
+			HBox MOVES_BOX = new HBox(10, column1Button, column2Button, column3Button, column4Button, column5Button, column6Button, column7Button);
+			MOVES_BOX.setAlignment(Pos.CENTER);
+			column1Button.setMaxWidth(40);
+			column2Button.setMaxWidth(40);
+			column3Button.setMaxWidth(40);
+			column4Button.setMaxWidth(40);
+			column5Button.setMaxWidth(40);
+			column6Button.setMaxWidth(40);
+			column7Button.setMaxWidth(40);
+
+			HBox SET_MOVES_BOX = new HBox(10, sendMoveButton, clearMoveButton);
+			SET_MOVES_BOX.setAlignment(Pos.CENTER);
+			BOARD_BOX.getChildren().addAll(MOVES_BOX, SET_MOVES_BOX);
+			if(user.getOpponent().isEmpty()){
+				sendMoveButton.setDisable(true);
+				clearMoveButton.setDisable(true);
+			}else {
+				clearMoveButton.setDisable(false);
+			}
+		}
+
+
 		HBox GAME_BOX = new HBox(10, CHAT_BOX, BOARD_BOX);
 		GAME_BOX.setAlignment(Pos.CENTER);
 
-		logoutButton.setPrefWidth(100);
-		logoutButton.setPrefHeight(25);
-		backButton.setPrefWidth(100);
-		backButton.setPrefHeight(25);
+		if(finalizedMove && user.loginCheck){
+			setMoveButtonVisibility(tempBoard);
+		}
+
+		quitButton.setPrefWidth(100);
+		quitButton.setPrefHeight(25);
+		friendRequestButton.setPrefWidth(100);
+		friendRequestButton.setPrefHeight(25);
 		Region spacer2 = new Region();
 		HBox.setHgrow(spacer2, Priority.ALWAYS);
-		HBox LOGOUT_BACK_BOX = new HBox(10, logoutButton, spacer2, backButton);
-		LOGOUT_BACK_BOX.setAlignment(Pos.CENTER);
-		LOGOUT_BACK_BOX.setPadding(new Insets(10, 10, 10, 10));
+		HBox QUIT_REQUEST_BOX = new HBox(10, quitButton, spacer2, friendRequestButton);
+		QUIT_REQUEST_BOX.setAlignment(Pos.CENTER);
+		QUIT_REQUEST_BOX.setPadding(new Insets(10, 10, 10, 10));
+		if(user.userInfo.friends.contains(user.getOpponent()) || user.getOpponent().isEmpty()) {
+			friendRequestButton.setDisable(true);
+			quitButton.setDisable(true);
+		} else {
+			friendRequestButton.setDisable(false);
+			quitButton.setDisable(false);
+		}
 
-		VBox gameScreenBox = new VBox(10, TITLE_SCREEN_BOX, GAME_BOX, LOGOUT_BACK_BOX);
+		VBox gameScreenBox = new VBox(10, TITLE_SCREEN_BOX, GAME_BOX, QUIT_REQUEST_BOX);
 		gameScreenBox.setAlignment(Pos.TOP_CENTER);
 		gameScreenBox.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
@@ -649,8 +982,70 @@ public class GuiClient extends Application{
 		gameScreen.setPadding(new Insets(10, 10, 10, 10));
 		gameScreen.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
 
+//		printBoard();
 		return gameScreenBox;
 	}
 
+	private void setMoveButtonVisibility(int[][] board){
+		if(board[0][0] != 0){
+			column1Button.setDisable(true);
+		}
+		else {
+			column1Button.setDisable(false);
+		}
+		if(board[0][1] != 0){
+			column2Button.setDisable(true);
+		}
+		else {
+			column2Button.setDisable(false);
+		}
+		if(board[0][2] != 0){
+			column3Button.setDisable(true);
+		}
+		else {
+			column3Button.setDisable(false);
+		}
+		if(board[0][3] != 0){
+			column4Button.setDisable(true);
+		}
+		else {
+			column4Button.setDisable(false);
+		}
+		if(board[0][4] != 0){
+			column5Button.setDisable(true);
+		}
+		else {
+			column5Button.setDisable(false);
+		}
+		if(board[0][5] != 0){
+			column6Button.setDisable(true);
+		}
+		else {
+			column6Button.setDisable(false);
+		}
+		if(board[0][6] != 0){
+			column7Button.setDisable(true);
+		}
+		else {
+			column7Button.setDisable(false);
+		}
+	}
+
+	private void printBoard(){
+		System.out.println("Board");
+		for(int i = 0; i < tempBoard.length; i++){
+			for(int j = 0; j < tempBoard[i].length; j++){
+				System.out.print(tempBoard[i][j] + " ");
+			}
+			System.out.println();
+		}
+		System.out.println();
+		for(int i = 0; i < user.getBoard().length; i++){
+			for (int j = 0; j < user.getBoard()[i].length; j++) {
+				System.out.print(user.getBoard()[i][j] + " ");
+			}
+			System.out.println();
+		}
+	}
 
 }

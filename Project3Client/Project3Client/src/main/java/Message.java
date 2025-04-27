@@ -36,7 +36,13 @@ public class Message implements Serializable {
         this.message = message;
     }
     public int[][] getBoard(){
-        return board;
+        int[][] copy = new int[6][7];
+        for(int i = 0; i < 6; i++){
+            for(int j = 0; j < 7; j++){
+                copy[i][j] = board[i][j];
+            }
+        }
+        return copy;
     }
     public void setBoard(int[][] board){
         this.board = board;
