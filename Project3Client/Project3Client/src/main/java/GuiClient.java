@@ -298,13 +298,13 @@ public class GuiClient extends Application{
 		});
 
 		sendButton.setOnAction(e -> {
-			String txt = message.getText().trim();
+			String txt = message.getText();
 			if (txt.isEmpty()) return;
 
 			if (pendingFriendRequest != null &&
 					(txt.equalsIgnoreCase("accept") || txt.equalsIgnoreCase("decline"))) {
 
-				Message rsp = new Message();                 // fresh packet
+				Message rsp = new Message();
 				rsp.userInfo = user.userInfo;
 				rsp.setType("Friend Request Response");
 				rsp.setOpponent(pendingFriendRequest);
@@ -312,13 +312,13 @@ public class GuiClient extends Application{
 				clientConnection.send(rsp);
 				pendingFriendRequest = null;
 
-			} else {                                         // normal chat
-				Message chat = new Message();                // fresh packet  ← NEW
+			} else {
+				Message chat = new Message();
 				chat.userInfo = user.userInfo;
 				chat.setType("Send Chat");
-				chat.setOpponent(user.getOpponent());        // whom you’re talking to
+				chat.setOpponent(user.getOpponent());
 				chat.setMessage(txt);
-				clientConnection.send(chat);                 // server echoes to both
+				clientConnection.send(chat);
 			}
 			message.clear();
 		});
@@ -989,7 +989,7 @@ public class GuiClient extends Application{
 		QUIT_REQUEST_BOX.setPadding(new Insets(10, 10, 10, 10));
 		if(user.userInfo.friends.contains(user.getOpponent()) || user.getOpponent().isEmpty()) {
 			friendRequestButton.setDisable(true);
-			quitButton.setDisable(true);
+			quitButton.setDisable(false);
 		} else {
 			friendRequestButton.setDisable(false);
 			quitButton.setDisable(false);
