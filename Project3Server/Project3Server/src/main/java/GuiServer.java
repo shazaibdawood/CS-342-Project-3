@@ -126,6 +126,14 @@ public class GuiServer extends Application{
 						listItems.getItems().add(data.userInfo.username + " started a game with the server");
 
 						break;
+					case "Quit":
+						listItems.getItems().add(data.userInfo.username + " quit the game so " + data.getOpponent() + " won");
+
+						break;
+					case "Exit":
+						listItems.getItems().add(data.userInfo.username + " exited the match");
+
+						break;
 					case "Disconnect":
 						if(data.userInfo.username == null || data.userInfo.username.isEmpty()) {
 							listItems.getItems().add("client #" + data.getIndex() + " logged out of server");

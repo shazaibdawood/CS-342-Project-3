@@ -99,12 +99,8 @@ public class GuiClient extends Application{
 		// });
 
 			Platform.runLater(()->{
-				if (data.userInfo != null && data.userInfo.username != null && data.userInfo.username.equals(user.userInfo.username)) {
-					user = data;
-				} else {
-					user.allUsers = data.allUsers;
-					user.users    = data.users;
-				}
+				user = data;
+				user.userInfo = data.userInfo;
 				String STATUS = data.getType();
 				System.out.println(STATUS);
 				switch(STATUS){
@@ -141,6 +137,7 @@ public class GuiClient extends Application{
 						finalizedMove = true;
 						gameStatus = "Win";
 						gameFinished = true;
+						quitButton.setDisable(false);
 						masterPane.setCenter(drawGameScreen());
 						break;
 
@@ -150,6 +147,7 @@ public class GuiClient extends Application{
 						finalizedMove = true;
 						gameFinished = true;
 						gameStatus = "Lose";
+						quitButton.setDisable(false);
 						masterPane.setCenter(drawGameScreen());
 						break;
 					case "Draw":
@@ -158,9 +156,14 @@ public class GuiClient extends Application{
 						finalizedMove = true;
 						gameFinished = true;
 						gameStatus = "Draw";
+						quitButton.setDisable(false);
 						masterPane.setCenter(drawGameScreen());
 						break;
 					case "Quit":
+						gameStatus = "Continue";
+						masterPane.setCenter(drawWelcomeScreen());
+						break;
+					case "Exit":
 						gameStatus = "Continue";
 						masterPane.setCenter(drawWelcomeScreen());
 						break;
@@ -362,17 +365,17 @@ public class GuiClient extends Application{
 
 		});
 
-		friendRequestButton.setOnAction(e->{
-			//if (!message.getText().isEmpty()) {
-			Message request = new Message();
-			request.userInfo= user.userInfo;
-			request.setType("Friend Request");
-			request.setOpponent(user.getOpponent());
-			clientConnection.send(request);
-			chatLogs.getItems().add("Friend request sent to " + user.getOpponent() + ".");
-			message.clear();
-			//}
-		});
+//		friendRequestButton.setOnAction(e->{
+//			//if (!message.getText().isEmpty()) {
+//			Message request = new Message();
+//			request.userInfo= user.userInfo;
+//			request.setType("Friend Request");
+//			request.setOpponent(user.getOpponent());
+//			clientConnection.send(request);
+//			chatLogs.getItems().add("Friend request sent to " + user.getOpponent() + ".");
+//			message.clear();
+//			//}
+//		});
 
 		column1Button.setOnAction(e->{
 			finalizedMove = false;
@@ -989,9 +992,12 @@ public class GuiClient extends Application{
 		QUIT_REQUEST_BOX.setPadding(new Insets(10, 10, 10, 10));
 		if(user.userInfo.friends.contains(user.getOpponent()) || user.getOpponent().isEmpty()) {
 			friendRequestButton.setDisable(true);
-			quitButton.setDisable(false);
+			quitButton.setDisable(true);
 		} else {
 			friendRequestButton.setDisable(false);
+			quitButton.setDisable(false);
+		}
+		if(!user.getOpponent().isEmpty() || gameFinished){
 			quitButton.setDisable(false);
 		}
 
