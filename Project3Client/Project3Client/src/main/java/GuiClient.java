@@ -161,6 +161,10 @@ public class GuiClient extends Application{
 						gameStatus = "Continue";
 						masterPane.setCenter(drawWelcomeScreen());
 						break;
+					case "Exit":
+						gameStatus = "Continue";
+						masterPane.setCenter(drawWelcomeScreen());
+						break;
 					case "Friend Request":
 						sendMoveButton.setDisable(true);
 						clearMoveButton.setDisable(true);
@@ -339,19 +343,19 @@ public class GuiClient extends Application{
 
 		});
 
-		friendRequestButton.setOnAction(e->{
-			user.setType("Friend Request");
-			user.setMessage(""); // Clear any previous message
-			user = clientConnection.sendAndWait(user);
-			if (user.getType().equals("Friend Accepted")) {
-				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was accepted!");
-				user.userInfo.friends.add(user.getOpponent());
-			} else if (user.getType().equals("Friend Rejected")) {
-				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was rejected");
-			}
-
-			friendRequestButton.setDisable(true);
-		});
+//		friendRequestButton.setOnAction(e->{
+//			user.setType("Friend Request");
+//			user.setMessage(""); // Clear any previous message
+//			user = clientConnection.sendAndWait(user);
+//			if (user.getType().equals("Friend Accepted")) {
+//				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was accepted!");
+//				user.userInfo.friends.add(user.getOpponent());
+//			} else if (user.getType().equals("Friend Rejected")) {
+//				chatLogs.getItems().add("Friend request to " + user.getOpponent() + " was rejected");
+//			}
+//
+//			friendRequestButton.setDisable(true);
+//		});
 
 		column1Button.setOnAction(e->{
 			finalizedMove = false;
